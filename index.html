@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>APEX GP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@200;300;400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vignette"></div>
+
+<!-- ============ HUD ============ -->
+<div id="hud" class="hidden">
+  <div class="topbar glass">
+    <div class="cell"><span class="lbl">POS</span><span class="val"><b id="hPos">1</b><i id="hPosN">/11</i></span></div>
+    <div class="cell"><span class="lbl">LAP</span><span class="val"><b id="hLap">1</b><i id="hLapN">/3</i></span></div>
+    <div class="cell wide"><span class="lbl">TIME</span><span class="val mono" id="hTime">0:00.000</span><span class="sub mono" id="hBest">BEST —</span></div>
+    <button class="iconbtn" id="btnPause" aria-label="Пауза"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
+  </div>
+  <div id="tower" class="glass"></div>
+  <div id="mapbox" class="glass"><canvas id="mini" width="220" height="220"></canvas></div>
+  <div id="speedo" class="glass"><b id="hSpd">0</b><span>KM/H</span><em id="hGear">N</em></div>
+  <div id="lights" class="glass hidden"><i></i><i></i><i></i><i></i><i></i></div>
+  <div id="banner" class="hidden"></div>
+
+  <div id="controls">
+    <div class="pedals">
+      <div id="brake" class="pedal glass small">
+        <svg viewBox="0 0 60 40"><path d="M10 8 L30 24 L50 8" /><path d="M10 20 L30 36 L50 20" opacity=".5"/></svg>
+        <span>BRAKE</span>
+      </div>
+      <div id="gas" class="pedal glass">
+        <svg viewBox="0 0 60 70"><path d="M8 34 L30 12 L52 34"/><path d="M8 52 L30 30 L52 52" opacity=".6"/><path d="M8 70 L30 48 L52 70" opacity=".3"/></svg>
+        <span>GAS</span>
+      </div>
+    </div>
+    <div id="wheelZone">
+      <svg id="wheel" viewBox="-120 -92 240 184">
+        <defs>
+          <linearGradient id="grip" x1="0" x2="1"><stop offset="0" stop-color="#121316"/><stop offset=".45" stop-color="#34373d"/><stop offset="1" stop-color="#0f1013"/></linearGradient>
+          <linearGradient id="carbon" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#30333a"/><stop offset=".6" stop-color="#1a1c20"/><stop offset="1" stop-color="#0e0f12"/></linearGradient>
+          <pattern id="cf" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#1b1d21"/><rect width="3" height="3" fill="#24272c"/><rect x="3" y="3" width="3" height="3" fill="#24272c"/></pattern>
+          <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,255,255,.22)"/><stop offset=".35" stop-color="rgba(255,255,255,0)"/></linearGradient>
+          <radialGradient id="knob"><stop offset="0" stop-color="#5a5e66"/><stop offset="1" stop-color="#1c1e22"/></radialGradient>
+        </defs>
+        <path d="M-96 -40 L-118 -20 L-118 10 L-96 22 Z M96 -40 L118 -20 L118 10 L96 22 Z" fill="#8a8f97" opacity=".85"/>
+        <path d="M-108 -34 Q-116 -72 -88 -80 L-64 -78 Q-54 -24 -58 44 Q-62 74 -88 78 Q-112 76 -112 46 Z" fill="url(#grip)" stroke="rgba(255,255,255,.14)"/>
+        <path d="M108 -34 Q116 -72 88 -80 L64 -78 Q54 -24 58 44 Q62 74 88 78 Q112 76 112 46 Z" fill="url(#grip)" stroke="rgba(255,255,255,.14)"/>
+        <g stroke="rgba(255,255,255,.07)" stroke-width="2"><path d="M-104 -50h36M-106 -36h42M-107 -22h46M-107 -8h48M-107 6h48M-106 20h46M-104 34h40M-100 48h34"/><path d="M104 -50h-36M106 -36h-42M107 -22h-46M107 -8h-48M107 6h-48M106 20h-46M104 34h-40M100 48h-34"/></g>
+        <path d="M-72 -62 Q-72 -76 -58 -76 L58 -76 Q72 -76 72 -62 L68 34 Q62 62 30 64 L-30 64 Q-62 62 -68 34 Z" fill="url(#cf)" stroke="rgba(255,255,255,.2)"/>
+        <path d="M-72 -62 Q-72 -76 -58 -76 L58 -76 Q72 -76 72 -62 L68 34 Q62 62 30 64 L-30 64 Q-62 62 -68 34 Z" fill="url(#gloss)"/>
+        <rect x="-3" y="-76" width="6" height="12" fill="#FFC400"/>
+        <g id="revs"></g>
+        <rect x="-38" y="-40" width="76" height="40" rx="4" fill="#06100d" stroke="rgba(255,255,255,.15)"/>
+        <rect x="-36" y="-38" width="72" height="8" fill="rgba(255,196,0,.12)"/>
+        <text x="-30" y="-31.5" font-size="6" fill="#FFC400" font-family="Titillium Web" font-weight="700">DELTA</text>
+        <text x="30" y="-31.5" font-size="6" fill="#8b929c" text-anchor="end" font-family="Titillium Web">ERS 100%</text>
+        <text id="wGear" x="0" y="-6" text-anchor="middle" font-size="24" font-weight="700" fill="#fff" font-family="Titillium Web">N</text>
+        <circle cx="-54" cy="-34" r="6.5" fill="#2e7cf6" stroke="#0a0a0a"/><circle cx="54" cy="-34" r="6.5" fill="#e8343a" stroke="#0a0a0a"/>
+        <circle cx="-54" cy="-14" r="5.5" fill="#f2f2f2" stroke="#0a0a0a"/><circle cx="54" cy="-14" r="5.5" fill="#FFC400" stroke="#0a0a0a"/>
+        <circle cx="-50" cy="6" r="5" fill="#24d07a" stroke="#0a0a0a"/><circle cx="50" cy="6" r="5" fill="#b05cff" stroke="#0a0a0a"/>
+        <g><circle cx="-34" cy="26" r="11" fill="url(#knob)" stroke="#FFC400" stroke-width="1.5"/><path d="M-34 26 L-34 16" stroke="#fff" stroke-width="2"/></g>
+        <g><circle cx="34" cy="26" r="11" fill="url(#knob)" stroke="#24d07a" stroke-width="1.5"/><path d="M34 26 L42 19" stroke="#fff" stroke-width="2"/></g>
+        <circle cx="0" cy="22" r="8" fill="url(#knob)" stroke="rgba(255,255,255,.3)"/><path d="M0 22 L-5 15" stroke="#fff" stroke-width="1.6"/>
+        <rect x="-14" y="38" width="28" height="12" rx="3" fill="#2a2d33"/><text x="0" y="47" font-size="7" fill="#e8343a" text-anchor="middle" font-family="Titillium Web" font-weight="700">PIT</text>
+      </svg>
+    </div>
+  </div>
+  <div id="deskHint" class="glass hidden">Мышь — руль · W — газ · S — тормоз</div>
+</div>
+
+<!-- ============ MENU ============ -->
+<section id="menu" class="screen">
+  <header class="brand">
+    <div class="logo">APEX<span>GP</span></div>
+    <button class="iconbtn" id="btnSettings" aria-label="Настройки"><svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+  </header>
+
+  <div class="menu-body">
+    <button id="carCard" class="glass card car-card">
+      <canvas id="menuCar" width="160" height="300"></canvas>
+      <div class="cc-info">
+        <span class="lbl">ВАШ БОЛИД</span>
+        <b id="mcTeam">—</b>
+        <span id="mcDriver" class="muted">—</span>
+        <span class="tag">ГАРАЖ →</span>
+      </div>
+    </button>
+
+    <div class="glass card track-card">
+      <div class="tc-head"><span class="lbl">ТРАССА</span><span class="flag mc"></span></div>
+      <b id="tcName">MONACO</b>
+      <span class="muted" id="tcSub">Circuit de Monaco · Monte Carlo</span>
+      <canvas id="trackThumb" width="240" height="160"></canvas>
+      <div class="tc-stats"><div><b id="tcLen">—</b><span>КМ</span></div><div><b id="tcLaps">3</b><span>КРУГА</span></div><div><b>11</b><span>БОЛИДОВ</span></div></div>
+    </div>
+
+    <button id="btnRace" class="btn primary">ГОНКА</button>
+    <button id="btnFriends" class="btn glass">ИГРАТЬ С ДРУЗЬЯМИ</button>
+  </div>
+</section>
+
+<!-- ============ GARAGE ============ -->
+<section id="garage" class="screen hidden">
+  <header class="g-head">
+    <button class="iconbtn" id="gBack" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+    <span class="lbl">ГАРАЖ · TELEMETRY</span>
+    <span class="lbl" id="gIndex">01 / 11</span>
+  </header>
+  <div class="g-grid">
+    <div class="g-col left">
+      <div class="g-block"><span class="lbl">TOP SPEED</span><div class="big"><b data-k="spd">0</b><small>km/h</small></div></div>
+      <div class="g-pair">
+        <div class="g-block"><span class="lbl">POWER</span><div class="mid"><b data-k="hp">0</b><small>hp</small></div></div>
+        <div class="g-block"><span class="lbl">0–100</span><div class="mid"><b data-k="a100">0</b><small>s</small></div></div>
+      </div>
+      <div class="g-block"><span class="lbl">ENGINE · RPM×1000</span>
+        <svg class="gauge" viewBox="0 0 120 64"><path class="gbg" d="M10 60 A50 50 0 0 1 110 60"/><path class="gfg" id="gGauge" d="M10 60 A50 50 0 0 1 110 60"/></svg>
+        <div class="gauge-v"><b data-k="rpm">0</b><small>0–200 <i data-k="a200">0</i>s</small></div>
+      </div>
+      <div class="g-bars">
+        <div class="bar"><span>BRAKES · <b data-k="brk">0</b> g</span><i class="trk"><u id="bBrk"></u></i></div>
+        <div class="bar"><span>THROTTLE</span><i class="trk"><u id="bPow"></u></i></div>
+        <div class="bar"><span>AERO</span><i class="trk"><u id="bAero"></u></i></div>
+        <div class="bar"><span>ERS</span><i class="trk"><u id="bErs"></u></i></div>
+      </div>
+    </div>
+    <div class="g-stage" id="gStage"><div class="gridbox"></div><canvas id="gCar"></canvas></div>
+    <div class="g-col right">
+      <span class="lbl">TEAM</span>
+      <b class="g-team" id="gTeam">—</b>
+      <span class="g-full muted" id="gFull">—</span>
+      <span class="lbl mt">DRIVER</span>
+      <b class="g-drv" id="gDrv">—</b>
+      <span class="numbox" id="gNum">4</span>
+      <img id="gHelm" class="helm" alt="">
+      <div class="kv"><span class="lbl">CHASSIS</span><b id="gCh">—</b></div>
+      <div class="kv"><span class="lbl">POWER UNIT</span><b id="gPu">—</b></div>
+      <div class="kv"><span class="lbl">WEIGHT</span><b><i data-k="kg">0</i> kg</b></div>
+      <div class="kv"><span class="lbl">DRS GAIN</span><b>+<i data-k="drs">0</i> km/h</b></div>
+      <div class="kv"><span class="lbl">LATERAL</span><b><i data-k="lat">0</i> g</b></div>
+      <span class="g-taken hidden" id="gTaken">ЗАНЯТ</span>
+    </div>
+  </div>
+  <div class="g-bottom">
+    <div><span class="lbl">TYRE PRESSURE · PSI</span><div class="rings" id="gRings"></div></div>
+    <div class="g-tit"><span class="lbl">TITLES</span><div class="ring big"><svg viewBox="0 0 40 40"><circle class="rb" cx="20" cy="20" r="16"/><circle class="rf" cx="20" cy="20" r="16"/></svg><b data-k="tit">0</b></div></div>
+  </div>
+  <div class="g-foot">
+    <button class="iconbtn glass" id="gPrev" aria-label="Предыдущий"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+    <div class="dots" id="gDots"></div>
+    <button class="iconbtn glass" id="gNext" aria-label="Следующий"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+  </div>
+  <button class="btn primary g-select" id="gSelect">ВЫБРАТЬ</button>
+</section>
+
+<!-- ============ FRIENDS ============ -->
+<section id="friends" class="screen hidden">
+  <header class="g-head">
+    <button class="iconbtn" id="fBack" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+    <span class="lbl">ИГРА С ДРУЗЬЯМИ</span><span></span>
+  </header>
+  <div class="menu-body narrow">
+    <label class="glass field"><span class="lbl">ВАШЕ ИМЯ</span><input id="fName" maxlength="12" placeholder="Player"></label>
+    <button class="btn primary" id="btnHost">СОЗДАТЬ ЛОББИ</button>
+    <div class="or"><span>или</span></div>
+    <label class="glass field"><span class="lbl">КОД КОМНАТЫ</span><input id="fCode" maxlength="4" placeholder="ABCD" autocapitalize="characters"></label>
+    <button class="btn glass" id="btnJoin">ПРИСОЕДИНИТЬСЯ</button>
+    <p class="muted small" id="fStatus"></p>
+  </div>
+</section>
+
+<!-- ============ LOBBY ============ -->
+<section id="lobby" class="screen hidden">
+  <header class="g-head">
+    <button class="iconbtn" id="lBack" aria-label="Выйти"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+    <span class="lbl">ЛОББИ</span><span></span>
+  </header>
+  <div class="menu-body narrow">
+    <div class="glass card code-card">
+      <span class="lbl">КОД КОМНАТЫ</span>
+      <b id="lCode">----</b>
+      <button class="tag" id="lCopy">СКОПИРОВАТЬ ССЫЛКУ</button>
+    </div>
+    <div class="glass card"><span class="lbl">ПИЛОТЫ · <i id="lCount">1</i>/11 · остальные — боты</span><ul id="lPlayers"></ul></div>
+    <button class="btn glass" id="lCar">СМЕНИТЬ БОЛИД</button>
+    <div class="seg glass" id="lLaps"><button data-v="3">3 круга</button><button data-v="5">5</button><button data-v="8">8</button></div>
+    <button class="btn primary" id="lStart">СТАРТ</button>
+    <p class="muted small" id="lWait">Ждём, когда хост запустит гонку…</p>
+  </div>
+</section>
+
+<!-- ============ RESULTS ============ -->
+<section id="results" class="screen hidden">
+  <div class="menu-body narrow">
+    <span class="lbl center">КЛАССИФИКАЦИЯ</span>
+    <b class="res-title" id="rTitle">P1</b>
+    <div class="glass card"><table id="rTable"></table></div>
+    <button class="btn primary" id="rAgain">ЕЩЁ РАЗ</button>
+    <button class="btn glass" id="rMenu">В МЕНЮ</button>
+  </div>
+</section>
+
+<!-- ============ PAUSE / SETTINGS ============ -->
+<div id="sheet" class="sheet hidden">
+  <div class="glass sheet-body">
+    <b class="sheet-title" id="sheetTitle">НАСТРОЙКИ</b>
+    <div class="row"><span>Сложность</span><div class="seg" id="sDiff"><button data-v="0">Лёгко</button><button data-v="1">Норма</button><button data-v="2">Профи</button></div></div>
+    <div class="row"><span>Круги (соло)</span><div class="seg" id="sLaps"><button data-v="3">3</button><button data-v="5">5</button><button data-v="8">8</button></div></div>
+    <div class="row"><span>Режим левши</span><button class="toggle" id="sLeft"><i></i></button></div>
+    <div class="row"><span>Звук</span><button class="toggle" id="sSound"><i></i></button></div>
+    <button class="btn primary" id="sClose">ПРОДОЛЖИТЬ</button>
+    <button class="btn glass hidden" id="sQuit">ВЫЙТИ ИЗ ГОНКИ</button>
+  </div>
+</div>
+<div id="toast" class="glass hidden"></div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" defer></script>
+<script src="sounds/engine.js" defer></script>
+<script src="game.js" defer></script>
+</body>
+</html>
