@@ -10,7 +10,7 @@ const rng = seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 
 /* ---------- tuning ---------- */
 const DS = 8, VMAX = 800, ACC = 640, BRAKE = 1550, GRIP = 1450, KMH = 0.432, STEP = 1 / 120;
-const CS = 1.56, CAR_HALF = 12 * CS, CAR_R = 10.5 * CS, WMAX = 2.0;
+const CS = 1.56, CAR_HALF = 12 * CS, CAR_R = 10.5 * CS, WMAX = 3.0;
 const GEARS = [.27, .39, .50, .60, .70, .80, .90, 1.0];
 
 /* ---------- teams (fictional) ---------- */
@@ -509,7 +509,7 @@ function physics(c, dt) {
   const ad = Math.abs(c.d); let grip = GRIP * tm.grip, vmax = VMAX * tm.spd, drag = 0;
   c.surf = 0;
   if (ad > T.hw + 13) {
-    if (T.city) { c.surf = 1; grip *= .78; vmax = 480; drag = 140; }
+    if (T.city) { c.surf = 3; grip *= .92; vmax *= .94; drag = 20; }
     else if (T.grav[c.idx] === Math.sign(c.d) && ad < T.hw + 130) { c.surf = 2; grip *= .42; vmax = 170; drag = 900; }
     else { c.surf = 1; grip *= .55; vmax = 330; drag = 260; }
   } else if (ad > T.hw - 6 && T.kerb[c.idx]) { c.surf = 3; grip *= .96; }
@@ -557,7 +557,13 @@ function barrier(c) {
   const s = Math.sign(c.d), nx = T.nx[c.idx] * s, ny = T.ny[c.idx] * s, ex = ad - lim;
   c.x -= nx * ex; c.y -= ny * ex;
   const vn = c.vx * nx + c.vy * ny;
-  if (vn > 0) { c.vx -= nx * vn; c.vy -= ny * vn; c.vx *= .96; c.vy *= .96; c.vL *= .3; if (c.human === 'local') cam.shake = Math.min(14, 3 + vn * .03); }
+  if (vn > 0) {
+    const sp = Math.hypot(c.vx, c.vy), tx = T.tx[c.idx], ty = T.ty[c.idx], sg = (c.vx * tx + c.vy * ty) >= 0 ? 1 : -1;
+    const keep = sp * (1 - Math.min(.12, vn / (sp + 1) * .25));
+    c.vx = tx * sg * keep; c.vy = ty * sg * keep; c.vL = 0;
+    c.h += wrapA(Math.atan2(tx * sg, -ty * sg) - c.h) * .5;
+    if (c.human === 'local') cam.shake = Math.min(12, 2 + vn * .025);
+  }
   c.d = s * lim;
 }
 function towCalc() {
@@ -656,7 +662,7 @@ function resize() {
 addEventListener('resize', resize);
 function camera(dt) {
   const c = G.cars[G.follow]; if (!c) return;
-  const sp = Math.hypot(c.vx, c.vy), base = Math.min(innerHeight / 560, innerWidth / 305) * (G.mode === 'attract' ? .8 : 1);
+  const sp = Math.hypot(c.vx, c.vy), base = Math.min(innerHeight / 560, innerWidth / 305) * (G.mode === 'attract' ? .8 : 1) * (isDesk ? 1 : .5);
   cam.z = lerp(cam.z, base * (1 - .3 * Math.min(1, sp / VMAX)), 1 - Math.exp(-dt * 1.5));
   let lx = c.vx * .3, ly = c.vy * .3; const lim = Math.min(innerWidth, innerHeight) * .3 / cam.z, l = Math.hypot(lx, ly);
   if (l > lim) { lx *= lim / l; ly *= lim / l; }
@@ -998,7 +1004,7 @@ function readInput(dt) {
     if (ks) {} else { In.kst = 0; if (In.kbd) In.steer = 0; if (In.mx != null && !In.kbd) { const d = (In.mx - innerWidth / 2) / (innerWidth * .2); In.steer = clamp(Math.sign(d) * Math.max(0, Math.abs(d) - .03), -1, 1); } }
   } else {
     if (!In.wa) In.wheel *= Math.exp(-dt * 9);
-    const s = In.wheel / WMAX; In.steer = Math.sign(s) * Math.pow(Math.abs(s), 1.2);
+    const s = In.wheel / WMAX; In.steer = Math.sign(s) * Math.pow(Math.abs(s), 1.5);
     wheelEl.style.transform = `rotate(${In.wheel}rad)`;
   }
   const gas = In.gas || K.KeyW || K.ArrowUp, brk = In.brake || K.KeyS || K.ArrowDown || K.Space;
