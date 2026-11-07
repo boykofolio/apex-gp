@@ -238,3 +238,9 @@ input{font:inherit;color:inherit}
 .desktop #controls{display:flex;pointer-events:none;justify-content:flex-end;height:190px}
 .desktop .pedals{visibility:hidden}
 .desktop #wheelZone{width:250px;pointer-events:none}
+
+/* ===== v5: gas only, smaller wheel ===== */
+#brake{display:none!important}
+#wheelZone{width:min(44vw,250px)}
+#gas{height:min(34vw,160px)}
+#speedo{bottom:calc(var(--sab) + min(36vw,200px) + 14px)}
