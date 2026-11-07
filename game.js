@@ -10,7 +10,7 @@ const rng = seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 
 /* ---------- tuning ---------- */
 const DS = 8, VMAX = 800, ACC = 640, BRAKE = 1550, GRIP = 1450, KMH = 0.432, STEP = 1 / 120;
-const CS = 1.56, CAR_HALF = 12 * CS, CAR_R = 10.5 * CS, WMAX = 3.0;
+const CS = 1.56, CAR_HALF = 12 * CS, CAR_R = 10.5 * CS, WMAX = 2.0;
 const GEARS = [.27, .39, .50, .60, .70, .80, .90, 1.0];
 
 /* ---------- teams (fictional) ---------- */
@@ -29,7 +29,7 @@ const TEAMS = [
 ];
 
 /* ---------- settings ---------- */
-const S = Object.assign({ team: 0, diff: 1, laps: 3, lefty: false, sound: true, name: '' },
+const S = Object.assign({ team: 0, diff: 1, laps: 3, lefty: false, sound: true, name: '', ctrl: 'wheel' },
   (() => { try { return JSON.parse(localStorage.getItem('apexgp') || '{}'); } catch (e) { return {}; } })());
 const saveS = () => { try { localStorage.setItem('apexgp', JSON.stringify(S)); } catch (e) {} };
 
@@ -978,7 +978,7 @@ function pedal(el, key) {
   const off = () => { In[key] = false; el.classList.remove('on'); };
   el.addEventListener('pointerdown', on); el.addEventListener('pointerup', off); el.addEventListener('pointercancel', off); el.addEventListener('lostpointercapture', off);
 }
-pedal($('#gas'), 'gas'); pedal($('#brake'), 'brake');
+pedal($('#gas'), 'gas'); pedal($('#aL'), 'left'); pedal($('#aR'), 'right'); pedal($('#brake'), 'brake');
 (() => {
   const z = $('#wheelZone'); let wp = null;
   z.addEventListener('pointerdown', e => {
@@ -1003,8 +1003,14 @@ function readInput(dt) {
     wheelEl.style.transform = `rotate(${In.steer * WMAX * .8}rad)`;
     if (ks) {} else { In.kst = 0; if (In.kbd) In.steer = 0; if (In.mx != null && !In.kbd) { const d = (In.mx - innerWidth / 2) / (innerWidth * .2); In.steer = clamp(Math.sign(d) * Math.max(0, Math.abs(d) - .03), -1, 1); } }
   } else {
+    if (S.ctrl === 'arrows') {
+      const ks = (In.right ? 1 : 0) - (In.left ? 1 : 0);
+      In.kst = ks ? clamp(In.kst + ks * dt * (Math.sign(In.kst) === -ks ? 9 : 3.2), -1, 1) : In.kst * Math.exp(-dt * 14);
+      In.steer = In.kst; In.wheel = 0;
+    } else {
     if (!In.wa) In.wheel *= Math.exp(-dt * 9);
-    const s = In.wheel / WMAX; In.steer = Math.sign(s) * Math.pow(Math.abs(s), 1.5);
+    const s = In.wheel / WMAX; In.steer = Math.sign(s) * Math.pow(Math.abs(s), 1.2);
+    }
     wheelEl.style.transform = `rotate(${In.wheel}rad)`;
   }
   const gas = In.gas || K.KeyW || K.ArrowUp, brk = In.brake || K.KeyS || K.ArrowDown || K.Space;
@@ -1278,6 +1284,8 @@ function syncSettings() {
   $$('#sLaps button').forEach(b => b.classList.toggle('on', +b.dataset.v === S.laps));
   $('#sLeft').classList.toggle('on', S.lefty); $('#sSound').classList.toggle('on', S.sound);
   $('#controls').classList.toggle('lefty', S.lefty);
+  $$('#sCtrl button').forEach(b => b.classList.toggle('on', b.dataset.v === S.ctrl));
+  $('#wheelZone').classList.toggle('hidden', S.ctrl === 'arrows'); $('#arrows').classList.toggle('hidden', S.ctrl !== 'arrows');
 }
 function wireUI() {
   $('#btnSettings').onclick = () => openSheet(false);
@@ -1286,6 +1294,7 @@ function wireUI() {
   $('#sQuit').onclick = () => { $('#sheet').classList.add('hidden'); if (G.net) netClose(); startAttract(); };
   $('#sDiff').onclick = e => { const v = e.target.dataset.v; if (v != null) { S.diff = +v; saveS(); syncSettings(); } };
   $('#sLaps').onclick = e => { const v = e.target.dataset.v; if (v != null) { S.laps = +v; saveS(); syncSettings(); } };
+  $('#sCtrl').onclick = e => { const v = e.target.dataset.v; if (v) { S.ctrl = v; saveS(); syncSettings(); } };
   $('#sLeft').onclick = () => { S.lefty = !S.lefty; saveS(); syncSettings(); };
   $('#sSound').onclick = () => { S.sound = !S.sound; saveS(); syncSettings(); };
   $('#carCard').onclick = () => openGarage('solo');
