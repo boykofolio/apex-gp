@@ -9,7 +9,7 @@
 <title>APEX GP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@200;300;400;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1794069425">
+<link rel="stylesheet" href="style.css?v=1794070404">
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -39,6 +39,10 @@
         <svg viewBox="0 0 60 70"><path d="M8 34 L30 12 L52 34"/><path d="M8 52 L30 30 L52 52" opacity=".6"/><path d="M8 70 L30 48 L52 70" opacity=".3"/></svg>
         <span>GAS</span>
       </div>
+    </div>
+    <div id="arrows" class="hidden">
+      <div id="aL" class="pedal glass arrow"><svg viewBox="0 0 60 60"><path d="M38 10 L16 30 L38 50"/></svg></div>
+      <div id="aR" class="pedal glass arrow"><svg viewBox="0 0 60 60"><path d="M22 10 L44 30 L22 50"/></svg></div>
     </div>
     <div id="wheelZone">
       <svg id="wheel" viewBox="-120 -92 240 184">
@@ -213,6 +217,7 @@
     <b class="sheet-title" id="sheetTitle">НАСТРОЙКИ</b>
     <div class="row"><span>Сложность</span><div class="seg" id="sDiff"><button data-v="0">Лёгко</button><button data-v="1">Норма</button><button data-v="2">Профи</button></div></div>
     <div class="row"><span>Круги (соло)</span><div class="seg" id="sLaps"><button data-v="3">3</button><button data-v="5">5</button><button data-v="8">8</button></div></div>
+    <div class="row"><span>Управление</span><div class="seg" id="sCtrl"><button data-v="wheel">Руль</button><button data-v="arrows">Стрелки</button></div></div>
     <div class="row"><span>Режим левши</span><button class="toggle" id="sLeft"><i></i></button></div>
     <div class="row"><span>Звук</span><button class="toggle" id="sSound"><i></i></button></div>
     <button class="btn primary" id="sClose">ПРОДОЛЖИТЬ</button>
@@ -222,7 +227,7 @@
 <div id="toast" class="glass hidden"></div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" defer></script>
-<script src="sounds/engine.js?v=1794069425" defer></script>
-<script src="game.js?v=1794069425" defer></script>
+<script src="sounds/engine.js?v=1794070404" defer></script>
+<script src="game.js?v=1794070404" defer></script>
 </body>
 </html>
