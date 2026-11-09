@@ -9,7 +9,7 @@
 <title>APEX GP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@200;300;400;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1794070404">
+<link rel="stylesheet" href="style.css?v=1794410000">
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -20,12 +20,15 @@
   <div class="topbar glass">
     <div class="cell"><span class="lbl">POS</span><span class="val"><b id="hPos">1</b><i id="hPosN">/11</i></span></div>
     <div class="cell"><span class="lbl">LAP</span><span class="val"><b id="hLap">1</b><i id="hLapN">/3</i></span></div>
-    <div class="cell wide"><span class="lbl">TIME</span><span class="val mono" id="hTime">0:00.000</span><span class="sub mono" id="hBest">BEST —</span></div>
+    <div class="cell wide"><span class="lbl">TIME</span><span class="val mono" id="hTime">0:00.000</span><span class="sub mono" id="hBest">BEST —</span><span class="sub mono" id="hSec"></span></div>
     <button class="iconbtn" id="btnPause" aria-label="Пауза"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
   </div>
   <div id="tower" class="glass"></div>
   <div id="mapbox" class="glass"><canvas id="mini" width="220" height="220"></canvas></div>
   <div id="speedo" class="glass"><b id="hSpd">0</b><span>KM/H</span><em id="hGear">N</em></div>
+  <div id="tyreChip" class="glass hidden"><i id="tyL">S</i><div><b id="tyW">100%</b><u><s id="tyB"></s></u><em id="wxT" class="hidden"></em></div></div>
+  <div id="pitTimer" class="glass hidden">5.0 с</div>
+  <div id="pitWarn" class="glass hidden"></div>
   <div id="lights" class="glass hidden"><i></i><i></i><i></i><i></i><i></i></div>
   <div id="banner" class="hidden"></div>
 
@@ -98,14 +101,16 @@
     </button>
 
     <div class="glass card track-card">
-      <div class="tc-head"><span class="lbl">ТРАССА</span><span class="flag mc"></span></div>
+      <div class="tc-head"><span class="lbl">ТРАССА</span><span class="tc-nav"><button id="tcPrev" class="tc-arrow" aria-label="Предыдущая">‹</button><span id="tcFlag" class="flag mc"></span><button id="tcNext" class="tc-arrow" aria-label="Следующая">›</button></span></div>
       <b id="tcName">MONACO</b>
       <span class="muted" id="tcSub">Circuit de Monaco · Monte Carlo</span>
       <canvas id="trackThumb" width="240" height="160"></canvas>
       <div class="tc-stats"><div><b id="tcLen">—</b><span>КМ</span></div><div><b id="tcLaps">3</b><span>КРУГА</span></div><div><b>11</b><span>БОЛИДОВ</span></div></div>
     </div>
 
+    <div class="row glass mrow"><span>Квалификация перед гонкой</span><button class="toggle" id="mQuali"><i></i></button></div>
     <button id="btnRace" class="btn primary">ГОНКА</button>
+    <button id="btnPractice" class="btn glass">ПРАКТИКА</button>
     <button id="btnFriends" class="btn glass">ИГРАТЬ С ДРУЗЬЯМИ</button>
   </div>
 </section>
@@ -193,10 +198,37 @@
       <button class="tag" id="lCopy">СКОПИРОВАТЬ ССЫЛКУ</button>
     </div>
     <div class="glass card"><span class="lbl">ПИЛОТЫ · <i id="lCount">1</i>/11 · остальные — боты</span><ul id="lPlayers"></ul></div>
+    <button class="btn glass" id="lTrack">ТРАССА: <span id="lTrackName">MONACO</span></button>
+    <div class="glass card opts" id="lOpts">
+      <div class="row"><span>Квалификация</span><button class="toggle" id="lQ"><i></i></button></div>
+      <div class="row"><span>Боты</span><button class="toggle" id="lB"><i></i></button></div>
+      <div class="row"><span>Шины и пит-стопы</span><button class="toggle" id="lT"><i></i></button></div>
+      <div class="row"><span>Погода</span><button class="toggle" id="lW"><i></i></button></div>
+      <div class="row" id="lWxRow"><div class="seg wx" id="lWx"><button data-v="0">Сухо</button><button data-v="1">Облачно</button><button data-v="2">Дождь</button><button data-v="3">Шторм</button><button data-v="4">Авто</button></div></div>
+    </div>
     <button class="btn glass" id="lCar">СМЕНИТЬ БОЛИД</button>
     <div class="seg glass" id="lLaps"><button data-v="3">3 круга</button><button data-v="5">5</button><button data-v="8">8</button></div>
     <button class="btn primary" id="lStart">СТАРТ</button>
     <p class="muted small" id="lWait">Ждём, когда хост запустит гонку…</p>
+  </div>
+</section>
+
+<!-- ============ QUALIFYING RESULTS ============ -->
+<section id="quali" class="screen hidden">
+  <div class="menu-body narrow">
+    <span class="lbl center">КВАЛИФИКАЦИЯ · СТАРТОВАЯ РЕШЁТКА</span>
+    <div class="glass card"><table id="qTable" class="rtable"></table></div>
+    <button class="btn primary" id="qGo">К ГОНКЕ</button>
+    <p class="muted small center" id="qWait">Ждём хоста…</p>
+  </div>
+</section>
+
+<!-- ============ TYRE CHOICE ============ -->
+<section id="tyrepick" class="screen hidden">
+  <div class="menu-body narrow wide">
+    <span class="lbl center">ШИНЫ НА СТАРТ</span>
+    <div class="tcards" id="tpCards"></div>
+    <p class="muted small center" id="tpTimer"></p>
   </div>
 </section>
 
@@ -218,16 +250,24 @@
     <div class="row"><span>Сложность</span><div class="seg" id="sDiff"><button data-v="0">Лёгко</button><button data-v="1">Норма</button><button data-v="2">Профи</button></div></div>
     <div class="row"><span>Круги (соло)</span><div class="seg" id="sLaps"><button data-v="3">3</button><button data-v="5">5</button><button data-v="8">8</button></div></div>
     <div class="row"><span>Управление</span><div class="seg" id="sCtrl"><button data-v="wheel">Руль</button><button data-v="arrows">Стрелки</button></div></div>
+    <div class="row"><span>Квалификация</span><button class="toggle" id="sQuali"><i></i></button></div>
+    <div class="row"><span>Шины и пит-стопы</span><button class="toggle" id="sTyres"><i></i></button></div>
+    <div class="row"><span>Погода</span><button class="toggle" id="sWeather"><i></i></button></div>
+    <div class="row" id="rowWx"><div class="seg wx" id="sWx"><button data-v="0">Сухо</button><button data-v="1">Облачно</button><button data-v="2">Дождь</button><button data-v="3">Шторм</button><button data-v="4">Авто</button></div></div>
     <div class="row"><span>Режим левши</span><button class="toggle" id="sLeft"><i></i></button></div>
     <div class="row"><span>Звук</span><button class="toggle" id="sSound"><i></i></button></div>
     <button class="btn primary" id="sClose">ПРОДОЛЖИТЬ</button>
     <button class="btn glass hidden" id="sQuit">ВЫЙТИ ИЗ ГОНКИ</button>
   </div>
 </div>
+<div id="pitSheet" class="hidden">
+  <div class="pit-in"><b>ПИТ-СТОП</b><span class="pit-clock" id="pitClock"></span><div class="tcards" id="pitCards"></div><p class="muted small center">Выбери шины · клавиши 1–4</p></div>
+</div>
 <div id="toast" class="glass hidden"></div>
 
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" defer></script>
-<script src="sounds/engine.js?v=1794070404" defer></script>
-<script src="game.js?v=1794070404" defer></script>
+<script src="vendor/peerjs.min.js" defer></script>
+<script src="sounds/engine.js?v=1794410000" defer></script>
+<script src="tracks.js?v=1794410000" defer></script>
+<script src="game.js?v=1794410000" defer></script>
 </body>
 </html>
