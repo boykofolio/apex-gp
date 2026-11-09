@@ -1722,7 +1722,7 @@ function wireUI() {
 let last = performance.now(), accT = 0, resUpd = 0;
 function frame(now) {
   requestAnimationFrame(frame);
-  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  const dt = clamp((now - last) / 1000, 0, .05); last = Math.max(last, now);
   readInput(dt);
   if (G.mode === 'race' || G.mode === 'attract' || G.mode === 'lobbywait') {
     if (G.net === 'client' && G.mode === 'race') { applySnaps(); if (G.phase === 'race') { accT += dt; let n = 0; while (accT >= STEP && n++ < 8) { clientStep(STEP); accT -= STEP; } if (n >= 8) accT = 0; } }
@@ -1740,7 +1740,7 @@ function frame(now) {
 /* hidden host tab: rAF stops, so keep the race running for everyone from a timer */
 setInterval(() => {
   if (!document.hidden || G.net !== 'host' || G.mode !== 'race' || G.paused) return;
-  const now = performance.now(), dt = Math.min(2, (now - last) / 1000); last = now;
+  const now = performance.now(), dt = clamp((now - last) / 1000, 0, 2); last = Math.max(last, now);
   for (let n = Math.round(dt / STEP); n > 0; n--) simStep(STEP);
   for (const c of G.cars) { c.rx = c.x; c.ry = c.y; c.rh = c.h; }
   Net.sendT = 0; netTick(dt);
