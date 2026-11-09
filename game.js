@@ -838,7 +838,8 @@ function simStep(dt) {
   } else G.t += dt;
   for (const c of G.cars) {
     const remote = c.human && c.human !== 'local' && !c.fin && c.pose;
-    if (remote && !c.pitS) { const p = c.pose; c.x = p[0]; c.y = p[1]; c.h = p[2]; c.vx = p[3]; c.vy = p[4]; c.vF = p[5]; c.slide = p[7]; c.surf = p[8]; }
+    if (remote && !c.pitS) { const p = c.pose, t = Math.min(.45, (performance.now() - c.poseT) / 1000 + c.poseR / 2000), tx = p[0] + p[3] * t, ty = p[1] + p[4] * t, far = Math.hypot(tx - c.x, ty - c.y) > 450, q = far ? 1 : 1 - Math.exp(-dt * 14);
+      c.x = lerp(c.x, tx, q); c.y = lerp(c.y, ty, q); c.h += wrapA(p[2] - c.h) * q; c.vx = p[3]; c.vy = p[4]; c.vF = p[5]; c.slide = p[7]; c.surf = p[8]; }
     pitTick(c, dt);
     if (G.opts.tyres && G.sess !== 'quali' && G.phase === 'race' && c.wear > 0) c.wear = Math.max(0, c.wear - tyreFx(c).r * Math.max(0, c.vF) * dt / G.track.len);
     if (c.human === 'local' && !c.fin) { c.thr = In.thr; c.brk = In.brk; c.steer = In.steer; }
@@ -1195,6 +1196,7 @@ function hud(dt) {
   if (!me.pitS && PitUI.open) { PitUI.open = false; $('#pitSheet').classList.add('hidden'); me.pitSel = null; }
   const pt = $('#pitTimer'); pt.classList.toggle('hidden', !me.pitS); if (me.pitS) { const tx = Math.max(0, me.pitT).toFixed(1) + ' с'; pt.textContent = tx; $('#pitClock').textContent = tx; }
   hudT -= dt; if (hudT > 0) return; hudT = .1;
+  { const nc = $('#netChip'); if (G.net === 'client' && Net.hc) { const v = Math.round(Net.rtt || 0); nc.textContent = (Net.hc.broker ? 'СЕРВЕР' : 'ПРЯМОЙ') + ' · ' + (v ? v + ' МС' : '…'); nc.style.color = v > 350 ? '#ff5a5a' : v > 180 ? '#ffc400' : '#24d07a'; nc.classList.remove('hidden'); } else if (G.net === 'host') { const m = Math.max(0, ...G.cars.filter(c => c.human && c.human !== 'local' && c.poseR).map(c => c.poseR)); nc.textContent = 'ГОСТИ · ' + (m ? m + ' МС' : '…'); nc.style.color = m > 350 ? '#ff5a5a' : m > 180 ? '#ffc400' : '#24d07a'; nc.classList.remove('hidden'); } else nc.classList.add('hidden'); }
   const ch = $('#tyreChip'), tyOn = G.opts.tyres && G.sess !== 'quali'; ch.classList.toggle('hidden', !tyOn);
   if (tyOn) { const ty = TY[me.tyre], w = Math.round(me.wear); $('#tyL').textContent = ty.l; $('#tyL').style.borderColor = $('#tyL').style.color = ty.c; $('#tyW').textContent = w + '%'; $('#tyB').style.width = w + '%'; $('#tyB').style.background = w > 60 ? '#24d07a' : w > 40 ? '#ffc400' : '#ff3b3b'; ch.classList.toggle('low', w <= 40);
     const wxOn = G.opts.wx >= 0, hv = Math.round(G.h); $('#wxT').classList.toggle('hidden', !wxOn); if (wxOn) $('#wxT').textContent = (hv > 40 ? 'ШТОРМ ' : hv > 20 ? 'ДОЖДЬ ' : hv > 10 ? 'ОБЛАЧНО ' : 'СУХО ') + hv + '%';
@@ -1410,8 +1412,9 @@ function hostLobby() {
 }
 function hostData(conn, uid, d) {
   if (d.t === 'ka') return;
+  if (d.t === 'pg') { conn.send({ t: 'po', c: d.c }); return; }
   if (d.t === 'hi') {
-    if (Net.players.some(p => p.id === uid)) { const old = Net.conns.get(uid); if (old && old !== conn && old.open !== false && !conn.viaRelay) Net.conns.set(uid, conn); else if (!old) Net.conns.set(uid, conn); bcastLobby(); return; }
+    if (Net.players.some(p => p.id === uid)) { const old = Net.conns.get(uid); if (old && old !== conn && old.open !== false && (!conn.viaRelay || (old.broker && !conn.broker))) Net.conns.set(uid, conn); else if (!old) Net.conns.set(uid, conn); bcastLobby(); return; }
     if (G.mode === 'race' && G.net === 'host') { conn.send({ t: 'busy' }); return; }
     if (Net.players.length >= 11) { conn.send({ t: 'full' }); return; }
     Net.conns.set(uid, conn);
@@ -1427,7 +1430,7 @@ function hostData(conn, uid, d) {
     const c = G.cars.find(c => c.human === uid); if (c && c.pitS) c.pitSel = clamp(d.k | 0, 0, 3);
   } else if (d.t === 'in') {
     const c = G.cars.find(c => c.human === uid);
-    if (c) { c.thr = clamp(+d.a || 0, 0, 1); c.brk = clamp(+d.b || 0, 0, 1); c.steer = clamp(+d.s || 0, -1, 1); if (Array.isArray(d.p) && d.p.length >= 10 && d.p[6] >= 0 && d.p[6] < G.track.N) c.pose = d.p; }
+    if (c) { c.thr = clamp(+d.a || 0, 0, 1); c.brk = clamp(+d.b || 0, 0, 1); c.steer = clamp(+d.s || 0, -1, 1); if (Array.isArray(d.p) && d.p.length >= 10 && d.p[6] >= 0 && d.p[6] < G.track.N) { c.pose = d.p; c.poseT = performance.now(); c.poseR = +d.r || 0; } }
   }
 }
 function bcast(m) { for (const c of Net.conns.values()) if (c.open) c.send(m); }
@@ -1436,24 +1439,26 @@ function joinLobby(code) {
   code = code.toUpperCase().trim(); if (code.length !== 4) return toast('Введите код из 4 букв');
   netClose(); const me = genId(); Object.assign(Net, { me, code }); $('#fStatus').textContent = 'Подключаемся…';
   const hi = { t: 'hi', uid: me, name: myName(), team: S.team };
-  const win = (conn, d) => { // first route that hears the host becomes the link; the others are shut
+  const shutRest = conn => { if (conn.viaRelay) { try { Net.peer && Net.peer.destroy(); } catch (e) {} Net.peer = null; }
+    for (const r of Net.rooms) if (r !== conn.room) try { r.leave(); } catch (e) {} Net.rooms = conn.room ? [conn.room] : [];
+    clearTimeout(Net.lateT); clearInterval(Net.hiT); for (const l of Net.links) if (l !== conn.link) l.close(); Net.links = conn.link ? [conn.link] : []; };
+  const win = (conn, d) => { // first route that hears the host becomes the link; a direct channel found later replaces a broker
+    if (Net.hc && Net.hc.broker && !conn.broker) { Net.hc = conn; clearInterval(Net.kaT); Net.rtt = 0; shutRest(conn); toast('Прямой канал: пинг ниже'); }
     if (!Net.hc) { Net.hc = conn; clearTimeout(Net.tm); $('#fStatus').textContent = '';
-      if (conn.viaRelay) { try { Net.peer && Net.peer.destroy(); } catch (e) {} Net.peer = null; }
-      for (const r of Net.rooms) if (r !== conn.room) try { r.leave(); } catch (e) {} Net.rooms = conn.room ? [conn.room] : [];
-      clearTimeout(Net.lateT); clearInterval(Net.hiT); for (const l of Net.links) if (l !== conn.link) l.close(); Net.links = conn.link ? [conn.link] : [];
-      if (conn.broker) { Net.hostSeen = performance.now(); Net.kaT = setInterval(() => { if (!Net.hc) return; conn.send({ t: 'ka' }); if (performance.now() - Net.hostSeen > 60000) { toast('Хост отключился'); netClose(); startAttract(); show('friends'); } }, 3000); } }
+      if (!conn.broker) shutRest(conn);
+      else { clearTimeout(Net.lateT); clearInterval(Net.hiT); for (const l of Net.links) if (l !== conn.link) l.close(); Net.links = [conn.link]; Net.hostSeen = performance.now(); Net.kaT = setInterval(() => { if (!Net.hc || !Net.hc.broker) return; conn.send({ t: 'ka' }); if (performance.now() - Net.hostSeen > 60000) { toast('Хост отключился'); netClose(); startAttract(); show('friends'); } }, 3000); } }
     if (conn.broker) Net.hostSeen = performance.now();
     if (Net.hc === conn) clientData(d);
   };
   if (typeof Peer !== 'undefined') {
     const p = new Peer({ debug: 0, config: ICE }); Net.peer = p;
-    const dial = () => { if (Net.hc || Net.me !== me) return; const conn = p.connect(PREFIX + code, { serialization: 'json' });
+    const dial = () => { if ((Net.hc && !Net.hc.broker) || Net.me !== me) return; const conn = p.connect(PREFIX + code, { serialization: 'json' });
       conn.on('open', () => conn.send(hi)); conn.on('data', d => win(conn, d));
       conn.on('close', () => { if (Net.hc === conn) { toast('Хост отключился'); netClose(); startAttract(); } }); };
     p.on('open', dial); p.on('error', e => { console.warn('peerjs', e.type); if (e.type === 'peer-unavailable') setTimeout(dial, 3000); });
   }
   loadRelays().forEach(mod => mod.then(M => {
-    if (Net.me !== me || Net.hc) return;
+    if (Net.me !== me || (Net.hc && !Net.hc.broker)) return;
     const room = M.joinRoom({ appId: 'apexgp-v2', rtcConfig: ICE }, code); Net.rooms.push(room);
     const act = room.makeAction('m'); let conn = null, hostPid = null;
     room.onPeerJoin = pid => act.send(hi, { target: pid });
@@ -1477,16 +1482,21 @@ function clientData(d) {
   else if (d.t === 'qres') { showQuali(d.rows.map(r => ({ ...r, me: r.human === Net.me })), false); }
   else if (d.t === 'tpick') { openPick(d.wet, d.secs, k => Net.hc && Net.hc.send({ t: 'tp', k })); }
   else if (d.t === 's') { G.snaps.push({ rt: performance.now(), ...d }); if (G.snaps.length > 6) G.snaps.shift(); }
+  else if (d.t === 'f') { const l = G.snaps[G.snaps.length - 1]; if (l) { G.snaps.push({ ...l, rt: performance.now(), tm: d.tm, c: l.c.map((r, i) => { const f = d.c[i], n = r.slice(); if (f) { n[0] = f[0]; n[1] = f[1]; n[2] = f[2]; n[3] = f[3]; n[5] = f[4]; } return n; }) }); if (G.snaps.length > 6) G.snaps.shift(); } }
+  else if (d.t === 'po') { const v = performance.now() - d.c; Net.rtt = Net.rtt ? lerp(Net.rtt, v, .25) : v; }
   else if (d.t === 'back') { G.mode = 'lobbywait'; startAttract(); show('lobby'); renderLobby(); }
 }
 function hostStart() { flowStart('host'); }
 function netTick(dt) {
   if (G.net === 'host') {
     Net.sendT -= dt; if (Net.sendT > 0) return; Net.sendT = [...Net.conns.values()].some(c => c.broker) ? 1 / 10 : 1 / 20;
-    bcast({ t: 's', bs: G.bs, h: +G.h.toFixed(1), ph: G.phase, lt: +G.lt.toFixed(2), tm: +G.t.toFixed(3), c: G.cars.map(c => [Math.round(c.x * 10) / 10, Math.round(c.y * 10) / 10, +c.h.toFixed(3), Math.round(c.vF), c.lap, c.idx, c.fin ? +c.finT.toFixed(3) : 0, +c.slide.toFixed(2), isFinite(c.best) ? +c.best.toFixed(3) : 0, c.surf, +(c.lapStart).toFixed(3), c.tyre, Math.round(c.wear), c.pitS ? 1 : 0, +c.pitT.toFixed(1), +(c.qt || 0).toFixed(3), +c.qs.toFixed(3), c.human ? c.sc : 0, c.human ? c.ls : 0, c.human ? c.bs : 0]) });
+    const full = { t: 's', bs: G.bs, h: +G.h.toFixed(1), ph: G.phase, lt: +G.lt.toFixed(2), tm: +G.t.toFixed(3), c: G.cars.map(c => [Math.round(c.x * 10) / 10, Math.round(c.y * 10) / 10, +c.h.toFixed(3), Math.round(c.vF), c.lap, c.idx, c.fin ? +c.finT.toFixed(3) : 0, +c.slide.toFixed(2), isFinite(c.best) ? +c.best.toFixed(3) : 0, c.surf, +(c.lapStart).toFixed(3), c.tyre, Math.round(c.wear), c.pitS ? 1 : 0, +c.pitT.toFixed(1), +(c.qt || 0).toFixed(3), +c.qs.toFixed(3), c.human ? c.sc : 0, c.human ? c.ls : 0, c.human ? c.bs : 0]) };
+    Net.fr = (Net.fr || 0) + 1; const fast = { t: 'f', tm: +G.t.toFixed(2), c: G.cars.map(c => [Math.round(c.x), Math.round(c.y), +c.h.toFixed(2), Math.round(c.vF), c.idx]) };
+    for (const c of Net.conns.values()) if (c.open) c.send(c.broker && Net.fr % 10 ? fast : full);
   } else if (G.net === 'client' && Net.hc && Net.hc.open) {
     Net.sendT -= dt; if (Net.sendT > 0) return; Net.sendT = Net.hc.broker ? 1 / 12 : 1 / 30; const m = G.cars[G.me];
-    Net.hc.send({ t: 'in', a: +In.thr.toFixed(2), b: In.brk, s: +In.steer.toFixed(3), p: m ? [+m.x.toFixed(1), +m.y.toFixed(1), +m.h.toFixed(3), +m.vx.toFixed(1), +m.vy.toFixed(1), Math.round(m.vF), m.idx, +m.slide.toFixed(2), m.surf, m.inPit ? 1 : 0] : null });
+    if (performance.now() - (Net.pgAt || 0) > 1000) { Net.pgAt = performance.now(); Net.hc.send({ t: 'pg', c: Net.pgAt }); }
+    Net.hc.send({ r: Math.round(Net.rtt || 0), t: 'in', a: +In.thr.toFixed(2), b: In.brk, s: +In.steer.toFixed(3), p: m ? [+m.x.toFixed(1), +m.y.toFixed(1), +m.h.toFixed(3), +m.vx.toFixed(1), +m.vy.toFixed(1), Math.round(m.vF), m.idx, +m.slide.toFixed(2), m.surf, m.inPit ? 1 : 0] : null });
   }
 }
 function clientStep(dt) { // the local player's car: instant response whatever the network delay
@@ -1507,7 +1517,11 @@ function applySnaps() {
   G.cars.forEach((c, i) => {
     const A = a.c[i], B = b.c[i], Lc = L.c[i]; if (!A || !B) return;
     const mine = i === G.me && !c.fin && !Lc[6];
-    if (!mine) { c.x = lerp(A[0], B[0], k); c.y = lerp(A[1], B[1], k); c.h = A[2] + wrapA(B[2] - A[2]) * k; c.vF = lerp(A[3], B[3], k);
+    if (!mine && Net.hc && Net.hc.broker && S2.length > 1) { // broker link: dead-reckon to "now" from the two latest states, then blend so nothing jumps
+      const P0 = S2[S2.length - 2], p = P0.c[i] || Lc, gap = Math.max(.03, (L.rt - P0.rt) / 1000), om = clamp(wrapA(Lc[2] - p[2]) / gap, -3, 3), now = performance.now(), t = Math.min(.55, (now - L.rt) / 1000 + (Net.rtt || 200) / 2000), hm = Lc[2] + om * t / 2, fin = Lc[13] || G.phase !== 'race';
+      const tx = fin ? Lc[0] : Lc[0] + Math.sin(hm) * Lc[3] * t, ty = fin ? Lc[1] : Lc[1] - Math.cos(hm) * Lc[3] * t, th = fin ? Lc[2] : Lc[2] + om * t, d0 = now - (c.predT || now); c.predT = now;
+      const q = Math.hypot(tx - c.x, ty - c.y) > 500 ? 1 : 1 - Math.exp(-d0 / 1000 * 11); c.x = lerp(c.x, tx, q); c.y = lerp(c.y, ty, q); c.h += wrapA(th - c.h) * q; c.vF = Lc[3]; const f = Math.sin(c.h), g = -Math.cos(c.h); c.vx = f * c.vF; c.vy = g * c.vF; c.idx = Lc[5]; c.slide = Lc[7]; c.surf = Lc[9]; }
+    else if (!mine) { c.x = lerp(A[0], B[0], k); c.y = lerp(A[1], B[1], k); c.h = A[2] + wrapA(B[2] - A[2]) * k; c.vF = lerp(A[3], B[3], k);
       const f = Math.sin(c.h), g = -Math.cos(c.h); c.vx = f * c.vF; c.vy = g * c.vF; c.idx = Lc[5]; c.slide = Lc[7]; c.surf = Lc[9]; }
     else if (Lc[13]) { const q = 1 - Math.exp(-.2); c.x = lerp(c.x, Lc[0], q); c.y = lerp(c.y, Lc[1], q); c.h += wrapA(Lc[2] - c.h) * q; c.vx = c.vy = c.vF = c.vL = 0; c.idx = Lc[5]; }
     c.prog = Lc[4] * G.track.N + Lc[5]; c.best = Lc[8] || Infinity; c.lapStart = Lc[10]; c.tyre = Lc[11]; c.wear = Lc[12]; c.pitS = Lc[13]; c.pitT = Lc[14]; c.qt = Lc[15]; c.qs = Lc[16]; if (Lc[17]) { c.sc = Lc[17]; c.ls = Lc[18]; c.bs = Lc[19]; }
