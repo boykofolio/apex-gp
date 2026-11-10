@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#07080b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>APEX GP 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<!-- ============ MENU ============ -->
+<div id="menu">
+  <header>
+    <div class="logo">APEX<b>GP</b><i>3D</i></div>
+    <div class="hint" id="hintKeys">W / ↑ газ · S / ↓ тормоз · A D руль · SHIFT — ERS · C камера · R возврат</div>
+  </header>
+
+  <section id="teamBox">
+    <div class="lbl">ВЫБОР БОЛИДА</div>
+    <div class="teamName" id="tName">FERRARI</div>
+    <div class="teamSub" id="tSub"></div>
+    <div class="stats">
+      <div><span>СКОРОСТЬ</span><u><s id="stSpd"></s></u></div>
+      <div><span>РАЗГОН</span><u><s id="stAcc"></s></u></div>
+      <div><span>СЦЕПЛЕНИЕ</span><u><s id="stGrip"></s></u></div>
+    </div>
+    <div class="num" id="tNum">16</div>
+  </section>
+
+  <button class="arrow" id="tPrev" aria-label="Предыдущая команда"><svg viewBox="0 0 24 24"><path d="M15 4 7 12l8 8"/></svg></button>
+  <button class="arrow" id="tNext" aria-label="Следующая команда"><svg viewBox="0 0 24 24"><path d="m9 4 8 8-8 8"/></svg></button>
+  <div id="chips"></div>
+
+  <section id="raceBox">
+    <div class="lbl">ТРАССА</div>
+    <div class="trackRow">
+      <button class="mini" id="kPrev" aria-label="Предыдущая трасса"><svg viewBox="0 0 24 24"><path d="M15 4 7 12l8 8"/></svg></button>
+      <div class="trackInfo">
+        <canvas id="kMap" width="320" height="200"></canvas>
+        <div class="trackName" id="kName">SUZUKA</div>
+        <div class="trackSub" id="kSub"></div>
+      </div>
+      <button class="mini" id="kNext" aria-label="Следующая трасса"><svg viewBox="0 0 24 24"><path d="m9 4 8 8-8 8"/></svg></button>
+    </div>
+    <div class="opts">
+      <div class="opt"><span>КРУГИ</span><div class="seg" id="oLaps"><b data-v="2">2</b><b data-v="3" class="on">3</b><b data-v="5">5</b></div></div>
+      <div class="opt"><span>СОПЕРНИКИ</span><div class="seg" id="oDiff"><b data-v="0">ЛЕГКО</b><b data-v="1" class="on">НОРМА</b><b data-v="2">ПРОФИ</b></div></div>
+      <div class="opt"><span>АВТОТОРМОЗ</span><div class="seg" id="oAssist"><b data-v="1">ВКЛ</b><b data-v="0" class="on">ВЫКЛ</b></div></div>
+    </div>
+    <button id="go">НА СТАРТ <svg viewBox="0 0 24 24"><path d="m9 4 8 8-8 8"/></svg></button>
+  </section>
+</div>
+
+<!-- ============ HUD ============ -->
+<div id="hud" class="hidden">
+  <div id="top">
+    <div class="cell"><span>POS</span><b id="hPos">1</b><i id="hPosN">/11</i></div>
+    <div class="cell"><span>LAP</span><b id="hLap">1</b><i id="hLapN">/3</i></div>
+    <div class="cell wide"><span>TIME</span><b id="hTime" class="mono">0:00.000</b><em id="hBest" class="mono">BEST —</em></div>
+  </div>
+  <div id="tower"></div>
+  <canvas id="mini" width="360" height="360"></canvas>
+  <div id="dash">
+    <div id="rpm"></div>
+    <div class="row">
+      <div id="gear">N</div>
+      <div class="spd"><b id="hSpd">0</b><span>KM/H</span></div>
+    </div>
+    <div id="ers"><span>ERS</span><u><s id="ersBar"></s></u></div>
+  </div>
+  <div id="lights" class="hidden"><i></i><i></i><i></i><i></i><i></i></div>
+  <div id="banner"></div>
+  <div id="wrong" class="hidden">РАЗВЕРНИСЬ</div>
+  <div id="btns">
+    <button id="bCam" aria-label="Камера">CAM</button>
+    <button id="bSnd" aria-label="Звук">♪</button>
+    <button id="bQuit" aria-label="Выйти в меню">✕</button>
+  </div>
+  <div id="touch" class="hidden">
+    <div class="tl"><div class="tb" id="kL"><svg viewBox="0 0 24 24"><path d="M15 4 7 12l8 8"/></svg></div><div class="tb" id="kR"><svg viewBox="0 0 24 24"><path d="m9 4 8 8-8 8"/></svg></div></div>
+    <div class="tr"><div class="tb sm" id="kE">ERS</div><div class="tb sm" id="kB">BRAKE</div><div class="tb big" id="kG">GAS</div></div>
+  </div>
+</div>
+
+<!-- ============ RESULTS ============ -->
+<div id="results" class="hidden">
+  <div class="panel">
+    <div class="lbl" id="rTrack">SUZUKA</div>
+    <h1 id="rTitle">P1</h1>
+    <div id="rSub"></div>
+    <div id="rList"></div>
+    <div class="rBtns"><button id="rAgain">ЕЩЁ РАЗ</button><button id="rMenu" class="ghost">В МЕНЮ</button></div>
+  </div>
+</div>
+
+<div id="loading"><div><b>APEX GP 3D</b><span id="loadTxt">Загрузка…</span></div></div>
+
+<script src="tracks.js?v=2" defer></script>
+<script src="tracks2.js?v=2" defer></script>
+<script type="module" src="main.js?v=2"></script>
+</body>
+</html>
