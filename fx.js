@@ -586,10 +586,8 @@ function tags(g, W, H, z, ox, oy) { // name plates: mine (optional) and my frien
    ===================================================================== */
 /* how much speed the picture should sell, 0..1+ */
 function speedK() { const me = G.cars[G.follow]; if (!me || G.mode !== 'race') return 0; const v = Math.hypot(me.vx, me.vy); return clamp((v / VMAX - .28) / .58, 0, 1) * (S.spdFx == null ? 1 : S.spdFx) * (me.bst ? 1.3 : 1) * (RP.on ? .45 : 1); }
-function flow(T, g, inV, W, H, z, ox, oy) { // road marks that stream past, then the ground smeared along the direction of travel
-  const me = G.cars[G.follow], k = speedK(); if (k < .04 || !me) return; const N = T.N, hw = T.hw, len = 34 + 90 * k;
-  g.fillStyle = `rgba(255,255,255,${Math.min(.5, .1 + .26 * k).toFixed(3)})`;
-  for (let d = -130; d <= 210; d += 2) { const i = (((me.idx + d) % N) + N) % N; if (i % 15) continue; for (const f of [-.74, -.38, .38, .74]) { const o = f * hw, x = T.x[i] + T.nx[i] * o, y = T.y[i] + T.ny[i] * o; if (!inV(x, y, 80)) continue; g.save(); g.translate(x, y); g.rotate(T.ang[i]); g.fillRect(-len / 2, -1.6, len, 3.2); g.restore(); } }
+function flow(T, g, inV, W, H, z, ox, oy) { // the ground smeared along the direction of travel
+  const me = G.cars[G.follow], k = speedK(); if (k < .04 || !me) return;
   if (!q) return; const L = k * .05 * z, taps = q > 1 ? [[.3, .42], [.6, .28], [1, .18]] : [[.55, .38]];
   g.setTransform(1, 0, 0, 1, 0, 0); for (const [t, a] of taps) { g.globalAlpha = a; g.drawImage(cv, me.vx * L * t, me.vy * L * t); } g.globalAlpha = 1; g.setTransform(z, 0, 0, z, ox - cam.x * z, oy - cam.y * z);
 }

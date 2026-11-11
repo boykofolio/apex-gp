@@ -845,13 +845,14 @@ function barrier(c) {
   const kn = c.kx * nx + c.ky * ny; if (kn > 0) { c.kx -= nx * kn; c.ky -= ny * kn; }
   const vn = c.vx * nx + c.vy * ny;
   if (vn > 0) {
-    FX.hit(c, nx, ny, vn);
+    FX.hit(c, nx, ny, c.human ? vn * .4 : vn);
     const sp = Math.hypot(c.vx, c.vy), tx = T.tx[c.idx], ty = T.ty[c.idx], sg = (c.vx * tx + c.vy * ty) >= 0 ? 1 : -1;
-    const keep = sp * (1 - (c.human ? Math.max((c.push || 0) * .4, Math.min(.07, vn / (sp + 1) * .16)) : Math.min(.55, vn / (sp + 1) * 1.1)));
+    const keep = sp * (1 - (c.human ? Math.max((c.push || 0) * .03, Math.min(.012, vn / (sp + 1) * .0125)) : Math.min(.55, vn / (sp + 1) * 1.1)));
     if (!c.human && vn > 45 && !c.inPit) { c.wallT = .55; for (let k = 0; k < 4; k++) puff(c.x + nx * 14, c.y + ny * 14, c, 0); }
-    c.vx = tx * sg * keep; c.vy = ty * sg * keep; c.vL = 0;
-    c.h += wrapA(Math.atan2(tx * sg, -ty * sg) - c.h) * .5;
-    if (c.human === 'local') cam.shake = Math.min(6, 1 + vn * .0125);
+    const first = c.human && !(G.t - (c.touchT ?? -9) < .4) ? 1 - Math.min(.06, .02 + vn / (sp + 1) * .12) : 1; if (c.human) c.touchT = G.t; // the first touch costs a little speed, that is all
+    c.vx = tx * sg * keep * first; c.vy = ty * sg * keep * first; c.vL = 0;
+    c.h += wrapA(Math.atan2(tx * sg, -ty * sg) - c.h) * (c.human ? .12 : .5); // a person just slides along the wall, no kick
+    if (c.human === 'local') cam.shake = Math.min(1.8, .3 + vn * .004);
     if (c.human && vn > 60) c.hits = (c.hits || 0) + 1;
   }
   c.d = s > 0 ? dmax : dmin;
