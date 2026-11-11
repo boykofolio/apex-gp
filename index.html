@@ -9,7 +9,7 @@
 <title>APEX GP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@200;300;400;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1794900002">
+<link rel="stylesheet" href="style.css?v=1794900003">
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -29,7 +29,6 @@
   <div id="tyreChip" class="glass hidden"><i id="tyL">S</i><div><b id="tyW">100%</b><u><s id="tyB"></s></u><em id="wxT" class="hidden"></em></div></div>
   <div id="pitTimer" class="glass hidden">5.0 с</div>
   <div id="pitWarn" class="glass hidden"></div>
-  <div id="liftWarn" class="hidden">СБРОСЬ ГАЗ</div>
   <div id="netChip" class="glass hidden"></div>
   <div id="lights" class="glass hidden"><i></i><i></i><i></i><i></i><i></i></div>
   <div id="banner" class="hidden"></div>
@@ -115,6 +114,7 @@
     <button id="btnRace" class="btn primary">ГОНКА</button>
     <button id="btnPractice" class="btn glass">ПРАКТИКА</button>
     <button id="btnFriends" class="btn glass">ИГРАТЬ С ДРУЗЬЯМИ</button>
+    <button id="btnRating" class="btn glass">РЕЙТИНГ</button>
   </div>
 </section>
 
@@ -256,6 +256,21 @@
   </div>
 </section>
 
+<!-- ============ RATING ============ -->
+<section id="rating" class="screen hidden">
+  <header class="g-head">
+    <button class="iconbtn" id="rtBack" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+    <span class="lbl">РЕЙТИНГ · ГОНКИ С ДРУЗЬЯМИ</span><span></span>
+  </header>
+  <div class="menu-body narrow rt">
+    <div class="seg glass" id="rtTabs"><button data-t="p">ПК</button><button data-t="m">Телефоны</button><button data-t="h">История</button></div>
+    <label class="glass field"><span class="lbl">ВАШ НИК</span><input id="rtNick" maxlength="12" placeholder="Player"></label>
+    <div class="glass card"><table id="rtTable" class="rtable"></table></div>
+    <div class="rt-pg"><button id="rtPrev" class="tc-arrow" aria-label="Назад">‹</button><span id="rtPage" class="muted small">1 / 1</span><button id="rtNext" class="tc-arrow" aria-label="Вперёд">›</button></div>
+    <p class="muted small center" id="rtStatus"></p>
+  </div>
+</section>
+
 <!-- ============ PAUSE / SETTINGS ============ -->
 <div id="sheet" class="sheet hidden">
   <div class="glass sheet-body">
@@ -276,6 +291,7 @@
     <div class="row sl" data-g="view"><span>Размер руля</span><input id="sWheel" type="range" min="50" max="200" step="5"><b>100%</b></div>
     <div class="row sl" data-g="view"><span>Размер педалей</span><input id="sPad" type="range" min="60" max="180" step="5"><b>100%</b></div>
     <div class="row sl" data-g="view"><span>Размер табло</span><input id="sHud" type="range" min="70" max="160" step="5"><b>100%</b></div>
+    <div class="row sl" data-g="view"><span>Эффект скорости</span><input id="sSpd" type="range" min="0" max="150" step="10"><b>100%</b></div>
     <button class="btn primary" id="sClose">ПРОДОЛЖИТЬ</button>
     <button class="btn glass hidden" id="sQuit">ВЫЙТИ ИЗ ГОНКИ</button>
   </div>
@@ -286,11 +302,12 @@
 <div id="toast" class="glass hidden"></div>
 
 <script src="vendor/peerjs.min.js" defer></script>
-<script src="sounds/engine.js?v=1794900002" defer></script>
-<script src="tracks.js?v=1794900002" defer></script>
-<script src="tracks2.js?v=1794900002" defer></script>
-<script src="fx.js?v=1794900002" defer></script>
-<script src="replay.js?v=1794900002" defer></script>
-<script src="game.js?v=1794900002" defer></script>
+<script src="sounds/engine.js?v=1794900003" defer></script>
+<script src="tracks.js?v=1794900003" defer></script>
+<script src="tracks2.js?v=1794900003" defer></script>
+<script src="fx.js?v=1794900003" defer></script>
+<script src="replay.js?v=1794900003" defer></script>
+<script src="rating.js?v=1794900003" defer></script>
+<script src="game.js?v=1794900003" defer></script>
 </body>
 </html>

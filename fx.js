@@ -562,10 +562,11 @@ function post(T, F, g, td, W, H, z, dt, now) {
       g.fillStyle = A[k % A.length]; g.globalAlpha = dust ? .3 : .85; g.save(); g.translate(x, y); g.rotate(dust ? .5 : now * (1 + h1 * 2) + k); g.scale(dust ? 3 : 1, dust ? .3 : .5 + .4 * Math.sin(now * 3 + k)); g.beginPath(); g.arc(0, 0, s, 0, 7); g.fill(); g.restore(); }
     g.globalAlpha = 1; }
   const me = G.cars[G.follow];
-  if (me && q) { const v = Math.hypot(me.vx, me.vy), s = clamp((v / VMAX - .6) / .4, 0, 1) * (me.bst ? 1.7 : 1);
-    if (s > .02) { const dx = me.vx / v, dy = me.vy / v, D = Math.max(W, H); g.globalCompositeOperation = 'lighter'; g.strokeStyle = `rgba(255,255,255,${(.12 * s).toFixed(3)})`; g.lineWidth = 1.4 * DPR; g.lineCap = 'round'; g.beginPath();
-      for (let k = 0; k < 28; k++) { const h1 = hash(k * 1.9), h2 = hash(k * 4.3 + 2), side = h2 - .5; if (Math.abs(side) < .09) continue; const len = (40 + h1 * 130) * DPR * s, u = (h1 * 9 + now * (1.2 + h2)) % 1 - .5, px = W / 2 - dy * side * D * 1.1 - dx * u * D * 1.2, py = H / 2 + dx * side * D * 1.1 - dy * u * D * 1.2; g.moveTo(px, py); g.lineTo(px - dx * len, py - dy * len); }
+  if (me && q) { const v = Math.hypot(me.vx, me.vy), s = speedK();
+    if (s > .02) { const dx = me.vx / v, dy = me.vy / v, D = Math.max(W, H); g.globalCompositeOperation = 'lighter'; g.strokeStyle = `rgba(255,255,255,${Math.min(.5, .24 * s).toFixed(3)})`; g.lineWidth = 1.7 * DPR; g.lineCap = 'round'; g.beginPath();
+      for (let k = 0, kn = 30 + 60 * Math.min(1, s) | 0; k < kn; k++) { const h1 = hash(k * 1.9), h2 = hash(k * 4.3 + 2), side = h2 - .5; if (Math.abs(side) < .13) continue; const len = (90 + h1 * 300) * DPR * s, u = (h1 * 9 + now * (2.6 + h2 * 2.4)) % 1 - .5, px = W / 2 - dy * side * D * 1.1 - dx * u * D * 1.2, py = H / 2 + dx * side * D * 1.1 - dy * u * D * 1.2; g.moveTo(px, py); g.lineTo(px - dx * len, py - dy * len); }
       g.stroke(); g.globalCompositeOperation = 'source-over'; }
+    if (s > .05) { const rg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .38, W / 2, H / 2, Math.hypot(W, H) / 2); rg.addColorStop(0, 'rgba(0,0,0,0)'); rg.addColorStop(1, `rgba(0,0,0,${Math.min(.55, .42 * s).toFixed(3)})`); g.fillStyle = rg; g.fillRect(0, 0, W, H); }
   }
   if (st.conf > 0) { st.conf -= dt; const t = 6 - st.conf, cols = ['#ff4a5a', '#ffd23a', '#4ad2ff', '#7dff8a', '#ff8ae0', '#ffffff'];
     for (let k = 0; k < 90; k++) { const h1 = hash(k * 1.7), h2 = hash(k * 2.9 + 3), y = ((h2 * 1.4 + t * (.22 + h1 * .2)) % 1.4 - .2) * H, x = h1 * W + Math.sin(t * 3 + k) * 24 * DPR; g.fillStyle = cols[k % 6]; g.save(); g.translate(x, y); g.rotate(t * (2 + h2 * 4) + k); g.fillRect(-4 * DPR, -2 * DPR, 8 * DPR, 4 * DPR); g.restore(); } }
@@ -583,6 +584,23 @@ function tags(g, W, H, z, ox, oy) { // name plates: mine (optional) and my frien
 /* =====================================================================
    FRAME
    ===================================================================== */
+/* how much speed the picture should sell, 0..1+ */
+function speedK() { const me = G.cars[G.follow]; if (!me || G.mode !== 'race') return 0; const v = Math.hypot(me.vx, me.vy); return clamp((v / VMAX - .28) / .58, 0, 1) * (S.spdFx == null ? 1 : S.spdFx) * (me.bst ? 1.3 : 1) * (RP.on ? .45 : 1); }
+function flow(T, g, inV, W, H, z, ox, oy) { // road marks that stream past, then the ground smeared along the direction of travel
+  const me = G.cars[G.follow], k = speedK(); if (k < .04 || !me) return; const N = T.N, hw = T.hw, len = 34 + 90 * k;
+  g.fillStyle = `rgba(255,255,255,${Math.min(.5, .1 + .26 * k).toFixed(3)})`;
+  for (let d = -130; d <= 210; d += 2) { const i = (((me.idx + d) % N) + N) % N; if (i % 15) continue; for (const f of [-.74, -.38, .38, .74]) { const o = f * hw, x = T.x[i] + T.nx[i] * o, y = T.y[i] + T.ny[i] * o; if (!inV(x, y, 80)) continue; g.save(); g.translate(x, y); g.rotate(T.ang[i]); g.fillRect(-len / 2, -1.6, len, 3.2); g.restore(); } }
+  if (!q) return; const L = k * .05 * z, taps = q > 1 ? [[.3, .42], [.6, .28], [1, .18]] : [[.55, .38]];
+  g.setTransform(1, 0, 0, 1, 0, 0); for (const [t, a] of taps) { g.globalAlpha = a; g.drawImage(cv, me.vx * L * t, me.vy * L * t); } g.globalAlpha = 1; g.setTransform(z, 0, 0, z, ox - cam.x * z, oy - cam.y * z);
+}
+function trails(g, now, inV) { // light ribbons off the rear wing
+  const fast = VMAX * .5; g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+  for (const c of G.cars) { const v = Math.hypot(c.vx, c.vy), P = c.tr || (c.tr = []); if (v < fast || !inV(c.rx, c.ry, 400)) { P.length = 0; continue; }
+    const fx = Math.sin(c.rh), fy = -Math.cos(c.rh), rx = -fy, ry = fx, w = 9.5 * CS, b = 22 * CS, a = [c.rx + rx * w - fx * b, c.ry + ry * w - fy * b, c.rx - rx * w - fx * b, c.ry - ry * w - fy * b];
+    if (P.length && Math.hypot(P[0][0] - a[0], P[0][1] - a[1]) > 260) P.length = 0; P.unshift(a); if (P.length > 12) P.pop(); const s = clamp((v - fast) / (VMAX * .4), 0, 1) * (S.spdFx == null ? 1 : Math.min(1.2, S.spdFx)); g.lineWidth = 2.4;
+    for (let n = 1; n < P.length; n++) { g.strokeStyle = `rgba(255,255,255,${(.34 * s * (1 - n / P.length)).toFixed(3)})`; g.beginPath(); g.moveTo(P[n - 1][0], P[n - 1][1]); g.lineTo(P[n][0], P[n][1]); g.moveTo(P[n - 1][2], P[n - 1][3]); g.lineTo(P[n][2], P[n][3]); g.stroke(); } }
+  g.globalCompositeOperation = 'source-over';
+}
 function render(dt) {
   const T = G.track, g = ctx, W = cv.width, H = cv.height, z = cam.z * DPR, F = prep(T), td = TOD[F.L.tod], now = performance.now() / 1000; fN++;
   if (st.zoomT > 0 && (st.zoomT -= dt) <= 0) setRes();
@@ -594,9 +612,11 @@ function render(dt) {
   world(T, cx - hx, cy - hy, cx + hx, cy + hy);
   const vc = T.chunks.filter(c => vis(c, cx, cy, vr + 300));
   g.lineCap = 'round'; g.lineJoin = 'round';
+  flow(T, g, inV, W, H, z, ox, oy);
   alive(T, F, g, dt, now, inV, vc, hx, hy);
   pitLive(T, g, now, inV);
   if (S.line !== false && G.mode === 'race') guide(T, g);
+  if (q) trails(g, now, inV);
   cars(T, F, g, td, now, inV, cx, cy, vr);
   parts(g, inV);
   overhead(T, F, g, td, now, inV, cx, cy, vr);

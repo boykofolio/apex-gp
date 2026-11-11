@@ -390,7 +390,6 @@ body.nocur,body.nocur *{cursor:none!important}
 #gas{height:calc(min(34vw,160px)*var(--padS))}
 #arrows{width:calc(min(58vw,330px)*var(--padS));height:calc(min(30vw,150px)*var(--padS))}
 #gas.boost{box-shadow:inset 0 0 30px rgba(70,170,255,.55),0 0 26px rgba(70,170,255,.45)}#gas.boost svg{stroke:#6fd0ff}
-#liftWarn{position:absolute;left:50%;top:26%;transform:translateX(-50%);padding:6px 18px;font-size:clamp(18px,4vw,30px);font-weight:900;font-style:italic;letter-spacing:.08em;color:#fff;background:#c8102e;white-space:nowrap;animation:lowT .3s infinite alternate}
 #netChip{position:absolute;left:10px;top:calc(var(--sat) + 190px);padding:3px 8px;font-size:10px;font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;white-space:nowrap}
 /* pit stop: the picker stays low so the crew can be seen */
 #pitSheet{inset:auto auto calc(var(--sab) + 10px) 50%;transform:translateX(-50%);width:min(640px,96vw);background:rgba(10,12,16,.84);animation:none}
@@ -427,7 +426,7 @@ body.nocur,body.nocur *{cursor:none!important}
   .screen{padding-top:calc(var(--sat) + 6px);padding-bottom:calc(var(--sab) + 6px)}
   .logo{font-size:20px}.brand #btnSettings{width:46px;height:46px}.brand #btnSettings svg{width:28px;height:28px}
   #menu .menu-body{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:min-content;max-width:none;margin:4px 0 0;gap:6px;flex:1;min-height:0}
-  #menu .menu-body>*{grid-column:1}#menu .track-card{grid-column:2;grid-row:1/span 5;min-height:0}
+  #menu .menu-body>*{grid-column:1}#menu .track-card{grid-column:2;grid-row:1/span 6;min-height:0}
   #menu .btn{height:38px;font-size:13px}.car-card{padding:6px 12px}.car-card canvas{width:26px;height:48px}.cc-info b{font-size:16px}.cc-info .tag{display:none}.mrow{padding:4px 12px}
   .tc-pick #trackThumb{height:90px}
   .btn{height:42px}.card{padding:8px 12px}
@@ -435,3 +434,9 @@ body.nocur,body.nocur *{cursor:none!important}
   #results .menu-body>.lbl{display:none}#results .res-title,#results .card{grid-column:1/span 2}
   #results .res-title{font-size:22px}#results .card{padding:2px 8px}#results .btn{height:32px;font-size:12px;letter-spacing:.1em}#rTable{font-size:11px}#rTable td{padding:0 4px}#rTable .muted{display:none}
 }
+
+/* ===== v9: rating ===== */
+#rating{background:radial-gradient(90% 60% at 50% 30%,rgba(42,46,54,.92),rgba(13,14,17,.97))}
+.menu-body.rt{max-width:620px}
+#rtTable{font-size:14px}#rtTable td{padding:5px 6px;border-top:1px solid var(--line)}#rtTable tr.hd td{border-top:0}
+.rt-pg{display:flex;align-items:center;justify-content:center;gap:16px}.rt-pg button:disabled{opacity:.3}
