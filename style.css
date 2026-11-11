@@ -297,4 +297,141 @@ html,body,canvas,#wheelZone,.pedal{-ms-touch-action:none}
 #pitWarn.hot{background:#c8102e;color:#fff;font-size:15px;padding:8px 18px;animation:lowT .4s infinite alternate}
 .rtable tr.hd td{color:var(--mut);font-size:10px;letter-spacing:.1em}.rtable .s{color:var(--mut);font-size:11px}.rtable .s.pb{color:#c77dff;font-weight:700}
 
+/* ---------- all-tracks picker ---------- */
+.tc-all{font-size:10px;letter-spacing:.14em;font-weight:700;color:#111;background:var(--acc);padding:5px 9px;border-radius:8px}
+#tracks{position:fixed;inset:0;z-index:60;background:rgba(6,7,10,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:calc(var(--sat) + 12px) 12px calc(var(--sab) + 12px)}
+#tracks.hidden{display:none}
+.tg-wrap{width:min(1100px,100%);max-height:100%;display:flex;flex-direction:column;border-radius:22px;padding:14px;overflow:hidden}
+.tg-head{display:flex;align-items:center;gap:12px;padding:2px 4px 10px}
+.tg-head b{font-size:18px;letter-spacing:.18em;font-weight:600}
+.tg-head .iconbtn{margin-left:auto}
+.tg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;overflow-y:auto;padding:2px 2px 6px;-webkit-overflow-scrolling:touch}
+.tg-card{position:relative;display:flex;flex-direction:column;align-items:stretch;text-align:left;border-radius:14px;padding:8px 10px 9px;background:rgba(255,255,255,.04);border:1px solid var(--line);transition:transform .15s,border-color .2s,background .2s;color:var(--txt)}
+.tg-card:hover{background:rgba(255,255,255,.08)}
+.tg-card:active{transform:scale(.97)}
+.tg-card.on{border-color:var(--acc);background:rgba(255,196,0,.09)}
+.tg-card canvas{width:100%;aspect-ratio:3/2;display:block}
+.tg-card b{font-size:13px;letter-spacing:.1em;font-weight:600;display:flex;align-items:center;gap:7px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tg-card span{font-size:10px;letter-spacing:.08em;color:var(--mut)}
+.tg-card .night{position:absolute;top:8px;right:9px;font-size:9px;letter-spacing:.14em;color:#c9a7ff}
+.tg-card .flag{flex:none}
+@media (max-width:480px){.tg-grid{grid-template-columns:repeat(2,1fr)}}
+
+.flag.au{width:24px;height:16px;background:radial-gradient(circle at 70% 60%,#fff 0 1.4px,transparent 1.8px),radial-gradient(circle at 85% 30%,#fff 0 1.1px,transparent 1.5px),radial-gradient(circle at 25% 75%,#fff 0 2px,transparent 2.4px),linear-gradient(#fff,#fff) 0 0/12px 8px no-repeat,#012169}
+.flag.cn{width:24px;height:16px;background:radial-gradient(circle at 22% 30%,#ffde00 0 2.6px,transparent 3px),#de2910}
+.flag.bh{width:24px;height:16px;background:linear-gradient(90deg,#fff 30%,transparent 30%),#ce1126}
+.flag.sa{width:24px;height:16px;background:linear-gradient(#fff,#fff) 50% 65%/12px 1.6px no-repeat,#006c35}
+.flag.ca{width:24px;height:16px;background:radial-gradient(circle at 50% 50%,#d52b1e 0 3.2px,transparent 3.6px),linear-gradient(90deg,#d52b1e 25%,#fff 25% 75%,#d52b1e 75%)}
+.flag.es{width:24px;height:16px;background:linear-gradient(180deg,#aa151b 25%,#f1bf00 25% 75%,#aa151b 75%)}
+.flag.at{width:24px;height:16px;background:linear-gradient(180deg,#ed2939 33%,#fff 33% 66%,#ed2939 66%)}
+.flag.gb{width:24px;height:16px;background:linear-gradient(#c8102e,#c8102e) 50% 0/3px 100% no-repeat,linear-gradient(#c8102e,#c8102e) 0 50%/100% 3px no-repeat,linear-gradient(#fff,#fff) 50% 0/6px 100% no-repeat,linear-gradient(#fff,#fff) 0 50%/100% 6px no-repeat,#012169}
+.flag.hu{width:24px;height:16px;background:linear-gradient(180deg,#cd2a3e 33%,#fff 33% 66%,#436f4d 66%)}
+.flag.nl{width:24px;height:16px;background:linear-gradient(180deg,#ae1c28 33%,#fff 33% 66%,#21468b 66%)}
+.flag.az{width:24px;height:16px;background:radial-gradient(circle at 46% 50%,#fff 0 2.6px,transparent 3px),linear-gradient(180deg,#0092bc 33%,#ed2939 33% 66%,#3f9c35 66%)}
+.flag.sg{width:24px;height:16px;background:radial-gradient(circle at 22% 28%,#fff 0 2.4px,transparent 2.8px),linear-gradient(180deg,#ef3340 50%,#fff 50%)}
+.flag.mx{width:24px;height:16px;background:radial-gradient(circle at 50% 50%,#8c5a2b 0 2px,transparent 2.4px),linear-gradient(90deg,#006847 33%,#fff 33% 66%,#ce1126 66%)}
+.flag.qa{width:24px;height:16px;background:linear-gradient(90deg,#fff 30%,transparent 30%),#8a1538}
+
+/* track picker: flag with the name, big arrows either side of the true-shape outline */
+.tc-title{display:flex;align-items:center;gap:10px;margin-top:4px;min-width:0}
+.tc-title b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tc-title .flag{flex:none;transform:scale(1.25);transform-origin:left center;margin-right:6px}
+.tc-pick{display:flex;align-items:center;gap:6px;margin:8px 0 6px}
+.tc-pick #trackThumb{flex:1;min-width:0;width:auto;height:130px;margin:0;cursor:pointer}
+.tc-pick .tc-arrow{flex:none;width:44px;height:96px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--txt);transition:background .2s,transform .12s}
+.tc-pick .tc-arrow svg{width:24px;height:24px}
+.tc-pick .tc-arrow:hover{background:rgba(255,196,0,.16);color:var(--acc)}
+.tc-pick .tc-arrow:active{transform:scale(.94)}
+
+/* ===== v7: FX engine UI — green start lights, ERS, zoom, join spinner ===== */
+#lights.go i{background:radial-gradient(circle at 40% 35%,#b5ffd6,#24d07a 55%,#0a6b3a);box-shadow:0 0 18px #24d07a,0 0 40px rgba(36,208,122,.55)}
+#ers{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--sab) + min(36vw,200px) + 62px);display:flex;align-items:center;gap:8px;padding:5px 12px;border-radius:12px;font-size:10px;letter-spacing:.14em;color:var(--mut);transition:box-shadow .15s,color .15s}
+.desktop #ers{bottom:calc(var(--sab) + 68px)}
+#ers b{font-weight:700} #ers em{font-style:normal;font-size:9px;opacity:.7}
+#ers u{display:block;width:92px;height:5px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden;text-decoration:none}
+#ers s{display:block;height:100%;width:100%;background:linear-gradient(90deg,#2a8cff,#6fe3ff);text-decoration:none}
+#ers.on{color:#bfeaff;box-shadow:0 0 24px rgba(70,170,255,.6)} #ers.on s{background:#fff}
+#ers.tow b::after{content:' · СЛИПСТРИМ';color:var(--green)}
+#boost{height:min(13vw,58px)} #boost svg{stroke:#6fd0ff;width:24%;stroke-width:5} #boost span{color:#8fdcff}
+#boost.on{box-shadow:inset 0 0 26px rgba(70,170,255,.5),0 0 22px rgba(70,170,255,.35)}
+#zoomBox{position:absolute;right:128px;top:calc(var(--sat) + 74px);display:none;flex-direction:column;border-radius:12px;overflow:hidden}
+.desktop #zoomBox{display:flex}
+#zoomBox button{width:32px;height:32px;font-size:18px;font-weight:700;line-height:1} #zoomBox button:hover{background:rgba(255,255,255,.12)}
+.desktop #deskHint{bottom:calc(var(--sab) + 112px)}
+.btn.loading{opacity:.8;pointer-events:none}
+.btn.loading::after{content:'';display:inline-block;width:14px;height:14px;margin-left:10px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-2px;animation:fxspin .7s linear infinite}
+@keyframes fxspin{to{transform:rotate(360deg)}}
+
+/* ===== v8: one screen, no scrolling; resizable HUD; replay beside the results ===== */
+:root{--mapS:1;--wheelS:1;--padS:1;--hudS:1}
+.screen{overflow:hidden;touch-action:none}
+.sheet-body{max-height:none;overflow:hidden;touch-action:none}
+.sheet-body [data-g].off{display:none}
+#sTabs{background:rgba(0,0,0,.25)}
+.row.sl input{flex:1;min-width:0;accent-color:var(--acc);touch-action:manipulation;height:26px}
+.row.sl span{flex:none;width:44%}.row.sl b{flex:none;width:44px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--acc)}
+body.nocur,body.nocur *{cursor:none!important}
+.brand #btnSettings{width:62px;height:62px;background:linear-gradient(180deg,#ffd43b,#ffb800);color:#14151a;box-shadow:0 8px 26px rgba(255,196,0,.35),inset 0 1px 0 rgba(255,255,255,.6);transition:transform .2s}
+.brand #btnSettings svg{width:38px;height:38px}
+.brand #btnSettings:hover{transform:rotate(30deg)}
+.brand #btnSettings:active{transform:scale(.92)}
+/* HUD sizes */
+#mapbox{width:calc(110px*var(--mapS));height:calc(110px*var(--mapS));pointer-events:auto}
+#zoomBox{right:calc(18px + 110px*var(--mapS))}
+#tyreChip{top:calc(var(--sat) + 82px + 110px*var(--mapS))}
+.topbar,#tower,#speedo,#ers{zoom:var(--hudS)}
+.grip{position:absolute;width:26px;height:26px;pointer-events:auto;touch-action:none;z-index:3;cursor:nesw-resize;background:linear-gradient(45deg,var(--acc) 0 16%,transparent 16% 30%,var(--acc) 30% 46%,transparent 46%);opacity:.85}
+#mapGrip{left:-1px;bottom:-1px}
+#wheelGrip{left:0;top:0;transform:scaleY(-1);cursor:nwse-resize;opacity:.6}
+#controls.lefty #wheelGrip{left:auto;right:0;transform:scale(-1,-1)}
+#wheelZone{position:relative;width:calc(min(44vw,250px)*var(--wheelS));height:auto;align-self:flex-end}
+.desktop #wheelZone{width:calc(250px*var(--wheelS));height:auto}
+.pedals{width:calc(min(30vw,150px)*var(--padS))}
+#gas{height:calc(min(34vw,160px)*var(--padS))}
+#arrows{width:calc(min(58vw,330px)*var(--padS));height:calc(min(30vw,150px)*var(--padS))}
+#gas.boost{box-shadow:inset 0 0 30px rgba(70,170,255,.55),0 0 26px rgba(70,170,255,.45)}#gas.boost svg{stroke:#6fd0ff}
+#liftWarn{position:absolute;left:50%;top:26%;transform:translateX(-50%);padding:6px 18px;font-size:clamp(18px,4vw,30px);font-weight:900;font-style:italic;letter-spacing:.08em;color:#fff;background:#c8102e;white-space:nowrap;animation:lowT .3s infinite alternate}
 #netChip{position:absolute;left:10px;top:calc(var(--sat) + 190px);padding:3px 8px;font-size:10px;font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* pit stop: the picker stays low so the crew can be seen */
+#pitSheet{inset:auto auto calc(var(--sab) + 10px) 50%;transform:translateX(-50%);width:min(640px,96vw);background:rgba(10,12,16,.84);animation:none}
+.pit-in{padding:8px;gap:6px}.pit-in>b{font-size:16px}.pit-in .tcard{padding:6px 4px;flex-basis:90px;flex-direction:row;justify-content:center;gap:8px}.pit-in .tcard i{width:34px;height:34px;border-width:5px;font-size:13px}.pit-in .tcard span{display:none}
+/* results beside the replay */
+#results{background:linear-gradient(90deg,rgba(10,11,14,0) 45%,rgba(10,11,14,.82) 70%);flex-direction:row;justify-content:flex-end;align-items:stretch;padding-left:16px}
+#results .menu-body{margin:0;width:min(420px,38vw);min-width:300px;justify-content:center;max-width:none;align-self:stretch}
+#results .res-title{font-size:56px}#results .btn{height:48px}#rTable td{padding:4px}
+#rpTag{background:rgba(10,11,14,.82)!important;position:fixed;left:16px;top:calc(var(--sat) + 14px);padding:8px 14px;font-size:13px;font-weight:700;letter-spacing:.14em;color:var(--acc)}
+@media (orientation:portrait){
+  #results{background:linear-gradient(180deg,rgba(10,11,14,0) 28%,rgba(10,11,14,.9) 46%);flex-direction:column;justify-content:flex-end;padding-left:16px}
+  #results .menu-body{width:100%;min-width:0;height:auto;flex:none;gap:6px}
+  #results .res-title{font-size:36px}#results .btn{height:42px}#rTable{font-size:12px}#rTable td{padding:2px 4px}
+}
+/* track picker: all of them at once */
+.tg-wrap{height:100%}
+.tg-grid{flex:1;min-height:0;overflow:hidden;grid-template-columns:repeat(var(--cols,5),minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:6px}
+.tg-card{min-height:0;min-width:0;padding:4px 6px}.tg-card canvas{flex:1;min-height:0;aspect-ratio:auto;object-fit:contain}.tg-card b{font-size:11px;margin-top:2px}
+@media (max-height:620px),(max-width:480px){.tg-card span{display:none}.tg-card b{font-size:9px}.tg-head{padding-bottom:4px}}
+/* lobby: two columns when there is room */
+#lPlayers{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;margin-top:4px}
+#lPlayers li{padding:3px 0;gap:6px;min-width:0}#lPlayers li b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}#lPlayers li span{display:none}
+.code-card b{font-size:44px}
+@media (min-width:760px),(orientation:landscape){
+  #lobby .menu-body{display:grid;grid-template-columns:1fr 1fr;max-width:920px;width:100%;align-content:center}
+  #lobby .menu-body>:nth-child(1){grid-column:1;grid-row:1}
+  #lobby .menu-body>:nth-child(2){grid-column:1;grid-row:2/span 6}
+  #lobby .menu-body>:nth-child(n+3){grid-column:2}
+  #lPlayers{grid-template-columns:1fr}#lPlayers li span{display:inline}
+  #friends .menu-body{max-width:460px}
+}
+/* phone on its side */
+@media (orientation:landscape) and (max-height:560px){
+  .screen{padding-top:calc(var(--sat) + 6px);padding-bottom:calc(var(--sab) + 6px)}
+  .logo{font-size:20px}.brand #btnSettings{width:46px;height:46px}.brand #btnSettings svg{width:28px;height:28px}
+  #menu .menu-body{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:min-content;max-width:none;margin:4px 0 0;gap:6px;flex:1;min-height:0}
+  #menu .menu-body>*{grid-column:1}#menu .track-card{grid-column:2;grid-row:1/span 5;min-height:0}
+  #menu .btn{height:38px;font-size:13px}.car-card{padding:6px 12px}.car-card canvas{width:26px;height:48px}.cc-info b{font-size:16px}.cc-info .tag{display:none}.mrow{padding:4px 12px}
+  .tc-pick #trackThumb{height:90px}
+  .btn{height:42px}.card{padding:8px 12px}
+  #results .menu-body{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:min-content;gap:4px;align-content:center}
+  #results .menu-body>.lbl{display:none}#results .res-title,#results .card{grid-column:1/span 2}
+  #results .res-title{font-size:22px}#results .card{padding:2px 8px}#results .btn{height:32px;font-size:12px;letter-spacing:.1em}#rTable{font-size:11px}#rTable td{padding:0 4px}#rTable .muted{display:none}
+}

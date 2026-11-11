@@ -82,7 +82,7 @@ window.EXTRA_TRACKS = [
   water: [{ w: 560, c: '#3f8a58', pts: [[.31, 1000], [.335, 900], [.36, 950], [.385, 1300]] }],
   marks: [['quadra', .49, 1, 520], ['morro', .62, 1, 620], ['kart', .25, 1, 700], ['tankfarm', .81, 1, 520], ['cross', .68, -1, 500]] },
 
-{ id: 'vegas', climate: [0.85, 0.13, 0.02, 0], sec: [0.3, 0.67], flag: 'us', name: 'LAS VEGAS', sub: 'Las Vegas Strip Circuit · Night race', km: '6.20', scale: 1, hw: 100, wall: 28, pts: TX_PTS.vegas, night: 1, walkC: 'rgba(70,75,105,.8)',
+{ id: 'vegas', climate: [0.85, 0.13, 0.02, 0], sec: [0.3, 0.67], flag: 'us', name: 'LAS VEGAS', sub: 'Las Vegas Strip Circuit · Night race', km: '6.20', scale: 1, hw: 100, wall: 14, ro: 0, pts: TX_PTS.vegas, night: 1, walkC: 'rgba(70,75,105,.8)',
   tint: 'rgba(12,14,58,.26)', verge: '#23253c', cars: ['#ffe9b0', '#ff3b5c', '#ffffff', '#5ad1ff', '#ffb347'], streetC: '#14162a', treeBase: 'palm',
   elev: [[0, 20], [.5, 22]],
   zones: [
@@ -287,7 +287,7 @@ function buildThemed(T) {
   const zoneOf = i => { const f = i / N, z = def.zones; for (let k = z.length - 1; k >= 0; k--) if (f >= z[k].f) return z[k]; return z[0]; };
   const CI = 14, cn = Math.floor(N / CI), cxA = new Float32Array(cn), cyA = new Float32Array(cn);
   for (let k = 0; k < cn; k++) { cxA[k] = T.x[k * CI]; cyA[k] = T.y[k * CI]; }
-  const near = (x, y) => { let b = 1e18, bi = 0; for (let k = 0; k < cn; k++) { const dx = x - cxA[k], dy = y - cyA[k], d = dx * dx + dy * dy; if (d < b) { b = d; bi = k; } } return [Math.sqrt(b), bi * CI]; };
+  const near = (x, y) => { let b = 1e18, bi = 0; for (let k = 0; k < cn; k++) { const dx = x - cxA[k], dy = y - cyA[k], d = dx * dx + dy * dy; if (d < b) { b = d; bi = k; } } const i = bi * CI, sd = (x - T.x[i]) * T.nx[i] + (y - T.y[i]) * T.ny[i] > 0 ? 1 : -1; return [Math.sqrt(b) - roAt(T, i, sd), i]; };
   const at = (f, off) => { const i = Math.round(f * N) % N; return [T.x[i] + T.nx[i] * off, T.y[i] + T.ny[i] * off]; };
   // elevation & slope along the lap
   const ev = new Float32Array(N), E = def.elev;
@@ -304,7 +304,7 @@ function buildThemed(T) {
   const railN = (x, y) => railS && railS.some((a, k) => k < railS.length - 1 && segD(x, y, a, railS[k + 1]) < 70);
   // landmarks: pushed out until clear of every part of the circuit
   T.marks = [];
-  for (const [k, f, side, dist] of def.marks) { const m = TX_MARK[k]; let o = dist, q; for (let t = 0; t < 30; t++) { q = at(f, side * o); if (near(q[0], q[1])[0] > hw + Wl + m.r + 40 && !wetN(q[0], q[1]) && !(T.pit && T.pit.block(q[0], q[1]))) break; o += 90; } T.marks.push({ k, x: q[0], y: q[1], r: m.r, s: txCanvas(m.w, m.d, m.H, g => { g.translate(0, 0); m.p(g); }, true) }); }
+  for (const [k, f, side, dist] of def.marks) { const m = TX_MARK[k]; let o = dist, q; for (let t = 0; t < 30; t++) { q = at(f, side * o); if (near(q[0], q[1])[0] > hw + Wl + m.r + 40 && !wetN(q[0], q[1]) && !(T.pit && T.pit.block(q[0], q[1]))) break; o += 90; } T.marks.push({ k, x: q[0], y: q[1], r: m.r, s: Object.assign(txCanvas(m.w, m.d, m.H, g => { g.translate(0, 0); m.p(g); }, true), { sc: m.sc || 1 }) }); }
   const markN = (x, y) => T.marks.some(m => Math.abs(x - m.x) < m.r + 50 && Math.abs(y - m.y) < m.r + 50);
   // Sepang: the real grandstand complex fills the wedge between the two straights
   const cpx = def.complex ? txBuildComplex(T, R) : null; T.cpx = cpx;
@@ -314,9 +314,10 @@ function buildThemed(T) {
   const pool = {}, treeP = {}, getS = st => { const P = pool[st] || (pool[st] = []); if (P.length < 12) { const [w, d, H, p] = TX_STY[st](R); const s = txCanvas(w, d, H, p); P.push(s); return s; } return P[R() * P.length | 0]; };
   const getT = k => { const P = treeP[k] || (treeP[k] = []); if (P.length < 7) { const s = txTree(k, R); P.push(s); return s; } return P[R() * P.length | 0]; };
   // grid fill
-  const [bx0, by0, bx1, by1] = T.bbox, M = 2500, CW = 124, CH = 106; T.buckets = new Map(); const BK = 700;
+  const [bx0, by0, bx1, by1] = T.bbox, M = def.margin || 2500, CW = 124, CH = 106; T.buckets = new Map(); const BK = 700;
   const put = o => { const key = Math.floor(o.x / BK) + ',' + Math.floor(o.y / BK); (T.buckets.get(key) || T.buckets.set(key, []).get(key)).push(o); };
-  for (const m of T.marks) put({ x: m.x, y: m.y, s: m.s, m });
+  T.bigM = T.marks.filter(m => m.s.sc > 1);
+  for (const m of T.marks) if (!(m.s.sc > 1)) put({ x: m.x, y: m.y, s: m.s, m });
   const road = new Path2D(), runs = []; T.objN = 0;
   const hmax = (x, y, d, i) => T.y[i] < y ? Math.max(14, d - hw - Wl - 30) : 999;
   for (let ry = Math.floor((by0 - M) / CH), row = 0; ry * CH < by1 + M; ry++, row++) {
@@ -346,13 +347,13 @@ function buildThemed(T) {
   if (cpx) for (const o of cpx.items(getT)) put(o);
   for (const b of T.buckets.values()) b.sort((a, c) => a.y - c.y);
   // verge trees / lanterns right behind the barriers
-  for (let i = 0; i < N; i += 7) { const z = zoneOf(i), sd = R() < .5 ? 1 : -1, o = hw + Wl + 30, x = T.x[i] + T.nx[i] * o * sd, y = T.y[i] + T.ny[i] * o * sd; if (R() < .7 && near(x, y)[0] > hw + Wl + 10 && !wetN(x, y) && !inCpx(x, y) && !(T.pit && T.pit.block(x, y))) put({ x, y, s: getT(z.tree), tree: 1 }); }
+  for (let i = 0; i < N; i += 7) { const z = zoneOf(i), sd = R() < .5 ? 1 : -1, o = hw + Wl + 30 + roAt(T, i, sd), x = T.x[i] + T.nx[i] * o * sd, y = T.y[i] + T.ny[i] * o * sd; if (R() < .7 && near(x, y)[0] > hw + Wl + 10 && !wetN(x, y) && !inCpx(x, y) && !(T.pit && T.pit.block(x, y))) put({ x, y, s: getT(z.tree), tree: 1 }); }
   for (const b of T.buckets.values()) b.sort((a, c) => a.y - c.y);
   // street traffic
   T.movers = []; const long = runs.filter(r => r.b - r.a > CW * 5); const CC = def.cars;
   for (let k = 0; k < Math.min(46, long.length * 2); k++) { const r = long[R() * long.length | 0]; T.movers.push({ x: lerp(r.a, r.b, R()), y: r.y + (R() < .5 ? -14 : 14), a: r.a, b: r.b, v: (R() < .5 ? 1 : -1) * (60 + R() * 70), c: CC[R() * CC.length | 0], l: R() < .15 ? 54 : 30 }); }
   // grandstands at the big corners
-  for (let i = 0; i < N; i += 90) { if (!T.kerb[i] || T.stands.length > 15) continue; const sd = -Math.sign(T.k[i]) || 1, o = hw + Wl + 95, x = T.x[i] + T.nx[i] * o * sd, y = T.y[i] + T.ny[i] * o * sd; if (near(x, y)[0] > hw + Wl + 70 && !inCpx(x, y) && !(T.pit && T.pit.block(x, y))) T.stands.push({ x, y, a: T.ang[i] + (sd > 0 ? Math.PI : 0) }); }
+  for (let i = 0; i < N; i += 90) { if (!T.kerb[i] || T.stands.length > 15) continue; const sd = -Math.sign(T.k[i]) || 1, o = hw + Wl + 95 + roAt(T, i, sd), x = T.x[i] + T.nx[i] * o * sd, y = T.y[i] + T.ny[i] * o * sd; if (near(x, y)[0] > hw + Wl + 70 && !inCpx(x, y) && !(T.pit && T.pit.block(x, y))) T.stands.push({ x, y, a: T.ang[i] + (sd > 0 ? Math.PI : 0) }); }
   // ground map with hill-shading
   const GC = 44, gx0 = bx0 - M - 200, gy0 = by0 - M - 200, gw = Math.ceil((bx1 - bx0 + 2 * M + 400) / GC), gh = Math.ceil((by1 - by0 + 2 * M + 400) / GC);
   const gc = document.createElement('canvas'); gc.width = gw; gc.height = gh; const gg = gc.getContext('2d'), id = gg.createImageData(gw, gh), hgt = new Float32Array(gw * gh), RGB = new Int32Array(gw * gh);
@@ -368,7 +369,7 @@ function buildThemed(T) {
     T.bridge = { i: bc, span, p, r1: rl(1), r2: rl(-1), x: T.x[bc], y: T.y[bc] }; }
   if (def.boats) for (const w of T.waters.slice(1)) for (let k = 0; k < 40; k++) { const a = w.s[R() * (w.s.length - 1) | 0], b = w.s[Math.min(w.s.length - 1, w.s.indexOf(a) + 1)], t = R(), l = 90 + R() * 80; const x = lerp(a[0], b[0], t) + (R() - .5) * w.w * .7, y = lerp(a[1], b[1], t) + (R() - .5) * w.w * .7; if (near(x, y)[0] > hw + Wl + 60) T.yachts.push({ x, y, l, w: l * .28, a: R() < .5 ? 0 : Math.PI }); }
   if (def.overhead != null) { const i = Math.round(def.overhead * N) % N; T.over = { x: T.x[i], y: T.y[i], a: T.ang[i] + Math.PI / 2 }; }
-  T.glows = []; if (def.night) { const cols = ['#ffd9a0', '#ffd9a0', '#ff5ec4', '#46d6ff', '#c98bff']; for (let i = 0; i < N; i += 34) for (const sd of [-1, 1]) { const o = hw + Wl + 8; T.glows.push({ x: T.x[i] + T.nx[i] * o * sd, y: T.y[i] + T.ny[i] * o * sd, r: 112, c: cols[(i / 34 | 0) % cols.length] }); } for (const m of T.marks) T.glows.push({ x: m.x, y: m.y - 60, r: m.r * 1.5, c: { sphere: '#3f7bff', eiffel: '#ffae4a', pyramid: '#4ac8ff', reddome: '#b05cff', ferris: '#ff5ec4', balloon: '#46d6ff' }[m.k] || '#ffffff' }); }
+  T.glows = []; if (def.night) { const cols = ['#ffd9a0', '#ffd9a0', '#ff5ec4', '#46d6ff', '#c98bff']; for (let i = 0; i < N; i += 34) for (const sd of [-1, 1]) { const o = hw + Wl + 8 + roAt(T, i, sd); T.glows.push({ x: T.x[i] + T.nx[i] * o * sd, y: T.y[i] + T.ny[i] * o * sd, r: 112, c: cols[(i / 34 | 0) % cols.length] }); } for (const m of T.marks) T.glows.push({ x: m.x, y: m.y - 60, r: m.r * 1.5, c: { sphere: '#3f7bff', eiffel: '#ffae4a', pyramid: '#4ac8ff', reddome: '#b05cff', ferris: '#ff5ec4', balloon: '#46d6ff' }[m.k] || '#ffffff' }); }
   // cloud shadows
   T.clouds = []; for (let k = 0; k < 10; k++) T.clouds.push({ x: lerp(bx0 - M, bx1 + M, R()), y: lerp(by0 - M, by1 + M, R()), r: 500 + R() * 800 });
 }
@@ -385,8 +386,9 @@ function drawThemedGround(T, cx, cy, vr, vc) {
   for (const m of T.movers) { const dt = 1 / 60; m.x += m.v * dt; if (m.x > m.b) m.v = -Math.abs(m.v); if (m.x < m.a) m.v = Math.abs(m.v); if (Math.abs(m.x - cx) > vr || Math.abs(m.y - cy) > vr) continue; ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(m.x - m.l / 2 + 2, m.y - 6, m.l, 13); ctx.fillStyle = m.c; rrect(ctx, m.x - m.l / 2, m.y - 8, m.l, 15, 3); ctx.fill(); ctx.fillStyle = 'rgba(25,35,45,.8)'; ctx.fillRect(m.x - m.l * .22, m.y - 6, m.l * .44, 11); if (m.l > 40) { ctx.fillStyle = '#f2ece0'; ctx.fillRect(m.x - m.l / 2, m.y + 2, m.l, 3); } }
   if (T.cpx) txDrawPlaza(T.cpx);
   const b0 = Math.floor((cx - vr - 400) / 700), b1 = Math.floor((cx + vr + 400) / 700), c0 = Math.floor((cy - vr - 400) / 700), c1 = Math.floor((cy + vr + 700) / 700);
+  for (const m of T.bigM || []) { const s = m.s, k = s.sc, W = s.c.width / TX_SC * k, H = s.c.height / TX_SC * k, x = m.x - (s.w / 2 + s.pad) * k, y = m.y - (s.d / 2 + s.H + s.pad) * k; if (x < cx + vr && x + W > cx - vr && y < cy + vr && y + H > cy - vr) ctx.drawImage(s.c, x, y, W, H); }
   for (let by = c0; by <= c1; by++) for (let bx = b0; bx <= b1; bx++) { const l = T.buckets.get(bx + ',' + by); if (!l) continue;
-    for (const o of l) { const s = o.s; if (o.tree) { const hs = s.s / 2; ctx.drawImage(s.c, o.x - hs, o.y - hs, s.s, s.s); } else { const W = s.c.width / TX_SC, H = s.c.height / TX_SC; ctx.drawImage(s.c, o.x - s.w / 2 - s.pad, o.y - s.d / 2 - s.H - s.pad, W, H); if (o.m && o.m.k === 'ferris') drawFerris(o.x, o.y); else if (o.m && o.m.k === 'sphere') txDrawSphere(o.x, o.y); } } }
+    for (const o of l) { const s = o.s; if (o.tree) { const hs = s.s / 2; ctx.drawImage(s.c, o.x - hs, o.y - hs, s.s, s.s); } else { const k = s.sc || 1, W = s.c.width / TX_SC * k, H = s.c.height / TX_SC * k; ctx.drawImage(s.c, o.x - (s.w / 2 + s.pad) * k, o.y - (s.d / 2 + s.H + s.pad) * k, W, H); if (o.m && o.m.k === 'ferris') drawFerris(o.x, o.y); else if (o.m && o.m.k === 'sphere') txDrawSphere(o.x, o.y); } } }
   if (T.yachts && T.yachts.length) for (const y of T.yachts) if (Math.abs(y.x - cx) < vr + 150 && Math.abs(y.y - cy) < vr + 150) drawYacht(y);
   if (T.rail) drawRail(T, cx, cy, vr);
   if (T.cpx) txDrawRoofs(T.cpx);
